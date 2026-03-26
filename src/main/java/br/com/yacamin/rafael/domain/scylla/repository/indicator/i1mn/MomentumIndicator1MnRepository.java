@@ -4,11 +4,12 @@ import br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn.MomentumIndicat
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MomentumIndicator1MnRepository extends CassandraRepository<MomentumIndicator1MnEntity, String> {
+public interface MomentumIndicator1MnRepository extends JpaRepository<MomentumIndicator1MnEntity, IndicatorKey> {
 
     Optional<MomentumIndicator1MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 

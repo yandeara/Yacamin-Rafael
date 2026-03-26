@@ -4,11 +4,12 @@ import br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn.VolatilityIndic
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface VolatilityIndicator1MnRepository extends CassandraRepository<VolatilityIndicator1MnEntity, String> {
+public interface VolatilityIndicator1MnRepository extends JpaRepository<VolatilityIndicator1MnEntity, IndicatorKey> {
 
     Optional<VolatilityIndicator1MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 

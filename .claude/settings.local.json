@@ -36,7 +36,8 @@
       "Bash(xargs -I {} basename {})",
       "Bash(for deriv:*)",
       "Bash(do echo:*)",
-      "Bash(__NEW_LINE_b6222344346333cc__ echo:*)"
+      "Bash(__NEW_LINE_b6222344346333cc__ echo:*)",
+      "Bash(curl:*)"
     ]
   }
 }

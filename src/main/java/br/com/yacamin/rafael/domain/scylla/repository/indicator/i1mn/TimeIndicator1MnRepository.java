@@ -4,11 +4,12 @@ import br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn.TimeIndicator1M
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TimeIndicator1MnRepository extends CassandraRepository<TimeIndicator1MnEntity, String> {
+public interface TimeIndicator1MnRepository extends JpaRepository<TimeIndicator1MnEntity, IndicatorKey> {
 
     Optional<TimeIndicator1MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 

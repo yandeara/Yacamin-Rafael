@@ -1,78 +1,71 @@
 package br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
+
+import jakarta.persistence.*;
 
 import java.time.Instant;
 
 import br.com.yacamin.rafael.domain.scylla.entity.indicator.TimeIndicatorEntity;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.cassandra.core.cql.Ordering;
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
-import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
-import org.springframework.data.cassandra.core.mapping.Table;
 
 @Setter
 @Getter
-@Table("time_indicator_1_mn")
+@Entity
+@Table(name = "time_indicator_1_mn")
+@IdClass(IndicatorKey.class)
 public class TimeIndicator1MnEntity implements TimeIndicatorEntity {
 
-    @PrimaryKeyColumn(name = "symbol", type = PrimaryKeyType.PARTITIONED)
+    @Id
     private String symbol;
 
-    @PrimaryKeyColumn(
-            name = "open_time",
-            type = PrimaryKeyType.CLUSTERED,
-            ordering = Ordering.ASCENDING
-    )
-    @Column("open_time")
+    
+    @Id
+    @Column(name = "open_time")
     private Instant openTime;
-
-
     // =========================================================================
     // TIME FEATURES (prefixo oficial: tim_)
     // =========================================================================
-    @Column("tim_minute_of_day")
+    @Column(name = "tim_minute_of_day")
     private double tim_minute_of_day;
 
-    @Column("tim_day_of_week")
+    @Column(name = "tim_day_of_week")
     private double tim_day_of_week;
 
-    @Column("tim_session_asia")
+    @Column(name = "tim_session_asia")
     private double tim_session_asia;
 
-    @Column("tim_session_europe")
+    @Column(name = "tim_session_europe")
     private double tim_session_europe;
 
-    @Column("tim_session_ny")
+    @Column(name = "tim_session_ny")
     private double tim_session_ny;
 
-    @Column("tim_sin_time")
+    @Column(name = "tim_sin_time")
     private double tim_sin_time;
 
-    @Column("tim_cos_time")
+    @Column(name = "tim_cos_time")
     private double tim_cos_time;
 
     // =========================================================================
     // V3 ADDITIONS — TIME FEATURES (tim_)
     // =========================================================================
 
-    @Column("tim_day_of_month")
+    @Column(name = "tim_day_of_month")
     private double tim_day_of_month;
 
-    @Column("tim_sin_day_of_week")
+    @Column(name = "tim_sin_day_of_week")
     private double tim_sin_day_of_week;
 
-    @Column("tim_cos_day_of_week")
+    @Column(name = "tim_cos_day_of_week")
     private double tim_cos_day_of_week;
 
-    @Column("tim_overlap_asia_eur")
+    @Column(name = "tim_overlap_asia_eur")
     private double tim_overlap_asia_eur;
 
-    @Column("tim_overlap_eur_ny")
+    @Column(name = "tim_overlap_eur_ny")
     private double tim_overlap_eur_ny;
 
-    @Column("tim_candle_in_h1")
+    @Column(name = "tim_candle_in_h1")
     private double tim_candle_in_h1;
-
-
 }

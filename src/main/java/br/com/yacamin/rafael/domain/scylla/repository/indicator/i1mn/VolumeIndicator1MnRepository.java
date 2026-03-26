@@ -4,11 +4,12 @@ import br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn.VolumeIndicator
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface VolumeIndicator1MnRepository extends CassandraRepository<VolumeIndicator1MnEntity, String> {
+public interface VolumeIndicator1MnRepository extends JpaRepository<VolumeIndicator1MnEntity, IndicatorKey> {
 
     Optional<VolumeIndicator1MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 

@@ -4,11 +4,12 @@ import br.com.yacamin.rafael.domain.scylla.entity.indicator.i1mn.TrendIndicator1
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TrendIndicator1MnRepository extends CassandraRepository<TrendIndicator1MnEntity, String> {
+public interface TrendIndicator1MnRepository extends JpaRepository<TrendIndicator1MnEntity, IndicatorKey> {
 
     Optional<TrendIndicator1MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 

@@ -3,7 +3,8 @@ package br.com.yacamin.rafael.domain.scylla.repository.indicator.i30mn;
 import br.com.yacamin.rafael.domain.scylla.entity.indicator.i30mn.MomentumIndicator30MnEntity;
 import br.com.yacamin.rafael.domain.scylla.entity.indicator.i30mn.VolumeIndicator30MnEntity;
 import br.com.yacamin.rafael.domain.scylla.entity.indicator.i5mn.MomentumIndicator5MnEntity;
-import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.yacamin.rafael.domain.scylla.entity.IndicatorKey;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MomentumIndicator30MnRepository extends CassandraRepository<MomentumIndicator30MnEntity, String> {
+public interface MomentumIndicator30MnRepository extends JpaRepository<MomentumIndicator30MnEntity, IndicatorKey> {
 
     Optional<MomentumIndicator30MnEntity> findBySymbolAndOpenTime(String symbol, Instant openTime);
 
