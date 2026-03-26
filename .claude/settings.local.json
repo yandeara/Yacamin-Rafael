@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find src/main/java/br/com/yacamin/rafael -name \"*.java\" -exec sed -i 's/br\\\\.com\\\\.yacamin\\\\.miguel/br.com.yacamin.rafael/g' {} +)",
+      "Bash(cd:*)",
+      "Bash(xargs sed:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(xargs grep:*)",
+      "Bash(find \"D:\\\\Projetos\\\\Yacamin\\\\yacamin-mikhael/src/main/java\" -name \"*.java\" -exec grep -l \"CassandraConfiguration\\\\|@Configuration\" {})",
+      "Bash(grep -r \"contact\\\\|port\\\\|host\" D:ProjetosYacaminyacamin-mikhael/src/main/resources/application*.yaml)",
+      "Bash(find D:ProjetosYacaminyacamin-mikhael/src/test -name *.yaml -o -name *.properties)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Rafael -type d -name *scylla*)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Mikhael/src/main/java/br/com/yacamin/mikhael/domain/scylla/entity/indicator/i5mn -type f -name *.java)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Mikhael/src/main/java/br/com/yacamin/mikhael/domain/scylla/repository/indicator/i5mn -type f -name *.java)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Mikhael/src/main/java/br/com/yacamin/mikhael/domain/scylla/entity/candle -type f -name *.java)",
+      "Bash(ls -la /d/Projetos/Yacamin/Yacamin-Rafael/src/main/java/br/com/yacamin/rafael/domain/*.java)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Mikhael/src/main/java -type f -name *5mn* -o -name *5m*Warmup* -o -name *5m*Sync*)",
+      "Bash(grep:*)",
+      "Bash(./gradlew compileJava)",
+      "Bash(find /d/Projetos/Yacamin/Yacamin-Mikhael -type f -name *HftSimulator*)",
+      "Bash(find D:ProjetosYacaminYacamin-Rafaelsrcmainjavabrcomyacaminrafaelapplicationservicewarmup -name *.java)",
+      "Bash(./gradlew dependencies:*)",
+      "Bash(sed -n '21,2740p' \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael/src/main/java/br/com/yacamin/mikhael/application/service/lstm/feature/HeadHunterFeaturesMap.java\")",
+      "Read(//tmp/**)",
+      "Bash(sed 's/package br.com.yacamin.mikhael.application.service.lstm.feature;/package br.com.yacamin.rafael.application.service.model;/' \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\mikhael\\\\application\\\\service\\\\lstm\\\\feature\\\\HeadHunterFeaturesMap.java\")",
+      "Bash(\"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Rafael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\rafael\\\\application\\\\service\\\\model\\\\HeadHunterFeaturesMap.java\")",
+      "Bash(sed 's/package br.com.yacamin.mikhael.application.service.lstm.feature.longtphit;/package br.com.yacamin.rafael.application.service.model;/' \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\mikhael\\\\application\\\\service\\\\lstm\\\\feature\\\\longtphit\\\\FeatureMaskService.java\")",
+      "Bash(\"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Rafael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\rafael\\\\application\\\\service\\\\model\\\\FeatureMaskService.java\")",
+      "Bash(find D:ProjetosYacaminYacamin-Mikhael -type f -name *HftSimulator* -o -name *XgboostOnlineInference*)",
+      "Bash(# Restore from Mikhael \\(the original source\\)\ncp \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\mikhael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\MicrostructureIndicatorEntity.java\" /tmp/mic_iface.java\nsed -i 's/br.com.yacamin.mikhael/br.com.yacamin.rafael/g' /tmp/mic_iface.java\ncp /tmp/mic_iface.java \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Rafael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\rafael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\MicrostructureIndicatorEntity.java\"\n\ncp \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\mikhael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\i1mn\\\\MicrostructureIndicator1MnEntity.java\" /tmp/mic_1mn.java\nsed -i 's/br.com.yacamin.mikhael/br.com.yacamin.rafael/g' /tmp/mic_1mn.java\ncp /tmp/mic_1mn.java \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Rafael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\rafael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\i1mn\\\\MicrostructureIndicator1MnEntity.java\"\n\ncp \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Mikhael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\mikhael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\i5mn\\\\MicrostructureIndicator5MnEntity.java\" /tmp/mic_5mn.java\nsed -i 's/br.com.yacamin.mikhael/br.com.yacamin.rafael/g' /tmp/mic_5mn.java\ncp /tmp/mic_5mn.java \"D:\\\\Projetos\\\\Yacamin\\\\Yacamin-Rafael\\\\src\\\\main\\\\java\\\\br\\\\com\\\\yacamin\\\\rafael\\\\domain\\\\scylla\\\\entity\\\\indicator\\\\i5mn\\\\MicrostructureIndicator5MnEntity.java\"\n\necho \"Done. Restored from Mikhael.\")",
+      "Bash(sort -u wc -l /tmp/entity_trd.txt echo --- echo 'NOT in mask:' comm -23 /tmp/entity_trd.txt /tmp/mask_trd.txt)",
+      "Bash(wc -l __NEW_LINE_14c3028e9fc9c58a__ echo \"Extra \\(not in mask\\):\" grep \"double getVol_\" \"D:/Projetos/Yacamin/Yacamin-Rafael/src/main/java/br/com/yacamin/rafael/domain/scylla/entity/indicator/VolumeIndicatorEntity.java\")",
+      "Bash(sort -u comm -23 /tmp/mask_vol.txt /tmp/vol_now.txt)",
+      "Bash(wc -l __NEW_LINE_1f14d8dd385393cc__ echo \"Extra \\(not in mask\\):\" grep \"double getVlt_\" \"D:/Projetos/Yacamin/Yacamin-Rafael/src/main/java/br/com/yacamin/rafael/domain/scylla/entity/indicator/VolatilityIndicatorEntity.java\")",
+      "Bash(sort -u comm -23 /tmp/mask_vlt.txt /tmp/vlt_now.txt)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(for deriv:*)",
+      "Bash(do echo:*)",
+      "Bash(__NEW_LINE_b6222344346333cc__ echo:*)"
+    ]
+  }
+}

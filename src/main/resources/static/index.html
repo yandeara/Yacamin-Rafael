@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yacamin Rafael</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #140a0a;
+            --surface: #1e1111;
+            --surface2: #2e1a1a;
+            --border: #3a1e1e;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --accent: #c53030;
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --purple: #a855f7;
+            --sidebar-w: 220px;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ── Config Page ───────────────────────────────── */
+        .config-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .config-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+        }
+
+        .config-row:last-child { border-bottom: none; }
+
+        .config-label { flex: 1; }
+
+        .config-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .config-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .config-input {
+            width: 100px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* ── Sidebar ─────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            transition: transform 0.25s ease;
+        }
+
+        .sidebar-brand {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-brand span {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-section {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            padding: 16px 12px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+        .nav-item.active {
+            background: rgba(59,130,246,0.12);
+            color: var(--accent);
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            padding: 12px 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer .nav-item { color: var(--red); }
+        .sidebar-footer .nav-item:hover { background: rgba(239,68,68,0.1); }
+
+        /* ── Mobile overlay ──────────────────────────────── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 99;
+        }
+
+        .sidebar-overlay.show { display: block; }
+
+        /* ── Mobile hamburger ────────────────────────────── */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: 90;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+        }
+
+        .hamburger {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--text);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .mobile-header h1 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* ── Main content ────────────────────────────────── */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .page-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 11px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+        }
+
+        .stat-value {
+            font-size: 15px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .page-body {
+            padding: 20px 24px;
+        }
+
+        /* ── Status bar (inside page header) ─────────────── */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ws-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .latency-val {
+            font-size: 10px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            margin-left: 2px;
+        }
+
+        .latency-good { color: var(--green); }
+        .latency-warn { color: var(--yellow); }
+        .latency-bad { color: var(--red); }
+        .latency-na { color: var(--text-dim); }
+
+        .ws-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ws-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .ws-dot.off { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+
+        .status-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline { background: var(--red); animation: none; }
+
+        .trading-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .trading-btn:hover { border-color: var(--accent); }
+
+        .trading-btn.active {
+            border-color: rgba(34,197,94,0.5);
+            background: rgba(34,197,94,0.1);
+            color: var(--green);
+        }
+
+        .trading-btn.inactive {
+            border-color: rgba(239,68,68,0.3);
+            background: rgba(239,68,68,0.06);
+            color: var(--red);
+        }
+
+        .trading-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .trading-btn.active .trading-dot {
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(34,197,94,0.6);
+            animation: pulse 2s infinite;
+        }
+
+        .trading-btn.inactive .trading-dot { background: var(--red); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Card grid ───────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+
+        .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .card.has-position { border-color: var(--purple); }
+        .card.resolved-up-card { border-color: rgba(34,197,94,0.35); }
+        .card.resolved-down-card { border-color: rgba(239,68,68,0.35); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .market-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .coin-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 50%;
+            font-size: 10px; font-weight: 800; color: #fff;
+            flex-shrink: 0; letter-spacing: -0.3px;
+        }
+        .market-time { font-size: 12px; color: var(--accent); margin-top: 2px; }
+
+        .timer { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .timer.urgent { color: var(--red); }
+        .timer.warning { color: var(--yellow); }
+        .timer.ok { color: var(--text-dim); }
+
+        /* ── Inference cards ────────────────────────────────── */
+        .inference-row {
+            display: flex;
+            gap: 4px;
+            align-items: stretch;
+            margin-bottom: 10px;
+        }
+        .inference-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 2px;
+        }
+        .inference-dot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 6px 2px;
+            position: relative;
+        }
+        .inference-dot.hit { border: 1px solid var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.25); }
+        .inference-dot.miss { border: 1px solid var(--red); box-shadow: 0 0 6px rgba(239,68,68,0.25); }
+        .inference-dot.pending { border: 1px solid transparent; }
+        .inference-dot .dot-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .inference-dot .dot-circle.up { background: var(--green); }
+        .inference-dot .dot-circle.down { background: var(--red); }
+        .inference-dot .dot-circle.empty { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+        .inference-dot .dot-conf {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+        }
+        .inference-dot .dot-prices {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            font-size: 8px;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+        .inference-dot .dot-open {
+            color: var(--text-dim);
+        }
+        .inference-dot .dot-close {
+            font-weight: 700;
+        }
+        .inference-dot .dot-close.up { color: var(--green); }
+        .inference-dot .dot-close.down { color: var(--red); }
+        .inference-dot .dot-close.pending { color: var(--text-dim); font-weight: 400; }
+        .inference-dot .dot-hit {
+            font-size: 8px;
+            font-weight: 800;
+            position: absolute;
+            top: 2px;
+            right: 4px;
+        }
+
+        /* ── Block prediction banner ──────────────────────── */
+        .block-pred {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+        }
+        .block-pred.hit { border-color: var(--green); background: rgba(34,197,94,0.06); }
+        .block-pred.miss { border-color: var(--red); background: rgba(239,68,68,0.06); }
+        .block-pred .bp-arrow {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .block-pred .bp-arrow.up { color: var(--green); }
+        .block-pred .bp-arrow.down { color: var(--red); }
+        .block-pred .bp-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            flex: 1;
+        }
+        .block-pred .bp-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .block-pred .bp-prices {
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+        .block-pred .bp-conf {
+            font-size: 12px;
+            font-weight: 700;
+            text-align: right;
+        }
+        .block-pred .bp-hit {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .metric {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-value.positive { color: var(--green); }
+        .metric-value.negative { color: var(--red); }
+        .metric-value.neutral  { color: var(--text); }
+
+        .psuccess-bar {
+            grid-column: 1 / -1;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .psuccess-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .psuccess-header .metric-label { margin-bottom: 0; }
+
+        .psuccess-value { font-size: 18px; font-weight: 700; }
+
+        .bar-track {
+            width: 100%;
+            height: 5px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        /* Position banners */
+        .position-banner {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .position-banner.pos-up { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
+        .position-banner.pos-down { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: var(--red); }
+        .position-banner.pos-opening { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); color: var(--purple); }
+        .position-banner.pos-closing { background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.25); color: var(--orange); }
+        .position-banner.pos-failed  { background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.25); color: var(--orange); }
+
+        .pos-side { font-size: 12px; font-weight: 700; text-transform: uppercase; }
+
+        .pos-details { display: flex; gap: 14px; align-items: center; }
+
+        .pos-detail-item { display: flex; flex-direction: column; align-items: flex-end; }
+        .pos-detail-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+        .pos-detail-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        /* Decay badge (Signal) */
+        .decay-badge {
+            font-size: 10px; font-weight: 700; padding: 2px 8px;
+            border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .decay-badge.aligned   { background: rgba(34,197,94,0.15); color: var(--green); }
+        .decay-badge.weakening { background: rgba(234,179,8,0.15); color: var(--yellow); }
+        .decay-badge.diverging { background: rgba(239,68,68,0.15); color: var(--red); }
+        .decay-badge.flat      { background: rgba(100,116,139,0.15); color: var(--text-dim); }
+
+        /* Efficiency bars */
+        .efficiency-bar {
+            grid-column: 1 / -1;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .efficiency-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+        }
+        .eff-dual-track {
+            display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+        }
+        .eff-label { font-size: 9px; font-weight: 700; color: var(--text-dim); width: 32px; text-transform: uppercase; }
+        .eff-track {
+            flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+        }
+        .eff-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+        /* Entry history */
+        .entry-history { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .entry-history-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 2px; }
+
+        .entry-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .entry-row.entry-sl { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+        .entry-row.entry-tp { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+        .entry-row.entry-resolve-win { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); }
+        .entry-row.entry-resolve-loss { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); }
+
+        .entry-side-badge {
+            font-size: 10px; font-weight: 700; padding: 2px 5px;
+            border-radius: 3px; min-width: 32px; text-align: center;
+        }
+
+        .entry-side-badge.side-up   { background: rgba(34,197,94,0.2); color: var(--green); }
+        .entry-side-badge.side-down { background: rgba(239,68,68,0.2);  color: var(--red); }
+
+        .entry-prices { flex: 1; color: var(--text-dim); }
+        .entry-arrow { color: var(--text-dim); }
+        .book-depth { margin-top: 8px; display: flex; gap: 8px; }
+        .book-side { flex: 1; }
+        .book-side-title { font-size: 9px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-align: center; }
+        .book-level { display: flex; justify-content: space-between; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-bottom: 1px; }
+        .book-level.bid { background: rgba(34,197,94,0.08); color: var(--green); }
+        .book-level.ask { background: rgba(239,68,68,0.08); color: var(--red); }
+        .book-level .bl-price { font-weight: 600; }
+        .book-level .bl-size { color: var(--text-dim); }
+        .book-spread { font-size: 9px; color: var(--text-dim); text-align: center; margin-top: 4px; }
+
+        .entry-size { font-size: 10px; color: var(--text-dim); min-width: 36px; text-align: center; }
+        .entry-latency { font-size: 9px; color: var(--text-dim); min-width: 65px; text-align: center; opacity: 0.7; }
+
+        .entry-close-badge {
+            font-size: 10px; font-weight: 700; padding: 2px 5px;
+            border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .entry-close-badge.badge-sl      { background: rgba(239,68,68,0.2); color: var(--red); }
+        .entry-close-badge.badge-tp      { background: rgba(34,197,94,0.2); color: var(--green); }
+        .entry-close-badge.badge-resolve-win  { background: rgba(34,197,94,0.25); color: var(--green); }
+        .entry-close-badge.badge-resolve-loss { background: rgba(239,68,68,0.25); color: var(--red); }
+        .entry-close-badge.badge-fail    { background: rgba(249,115,22,0.2); color: var(--orange); }
+        .entry-close-badge.badge-smart   { background: rgba(168,85,247,0.2); color: var(--purple); }
+
+        .entry-pnl { font-weight: 700; min-width: 60px; text-align: right; }
+        .entry-pnl.pos { color: var(--green); }
+        .entry-pnl.neg { color: var(--red); }
+
+        .resolved-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 12px; font-weight: 700; padding: 4px 10px;
+            border-radius: 6px; letter-spacing: 0.5px;
+        }
+
+        .resolved-badge.resolved-up { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+        .resolved-badge.resolved-down { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+        .empty-state h2 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+
+        .flash { animation: flash-anim 0.4s ease; }
+        @keyframes flash-anim {
+            0% { background: rgba(59,130,246,0.1); }
+            100% { background: var(--surface); }
+        }
+
+        /* ── Responsive ──────────────────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            .main {
+                margin-left: 0;
+                padding-top: 52px;
+            }
+
+            .page-header {
+                padding: 14px 16px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-stats {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 4px;
+            }
+
+            .status-bar {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+            }
+
+            .page-body {
+                padding: 14px 12px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .card {
+                padding: 14px;
+            }
+
+            .pos-details {
+                gap: 8px;
+            }
+
+            .stat-chip {
+                flex-shrink: 0;
+            }
+        }
+
+        /* ── Mode Toggle ────────────────────────────────── */
+        .mode-toggle {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            background: var(--surface2);
+            color: var(--text-dim);
+            border: none;
+            padding: 4px 14px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .mode-btn + .mode-btn {
+            border-left: 1px solid var(--border);
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: var(--border);
+            color: var(--text);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Mobile header -->
+    <div class="mobile-header">
+        <button class="hamburger" onclick="toggleSidebar()" id="hamburger-btn">&#9776;</button>
+        <h1>YACAMIN RAFAEL</h1>
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <h1>YACAMIN RAFAEL</h1>
+            <span>Trading Engine</span>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">Dashboards</div>
+            <button class="nav-item active" data-page="sim" onclick="navigate('sim')">
+                <span class="nav-icon">&#9671;</span>
+                Dashboard Simulado
+            </button>
+            <div class="nav-section">Sistema</div>
+            <button class="nav-item" data-page="algos" onclick="navigate('algos')">
+                <span class="nav-icon">&#9733;</span>
+                Algoritmos
+            </button>
+            <button class="nav-item" data-page="config" onclick="navigate('config')">
+                <span class="nav-icon">&#9881;</span>
+                Configuracoes
+            </button>
+        </div>
+        <div class="sidebar-footer">
+            <button class="nav-item" onclick="logout()">
+                <span class="nav-icon">&#10140;</span>
+                Sair
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="main">
+        <!-- Page: Simulation Dashboard -->
+        <div class="page active" id="page-sim">
+            <div class="page-header">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span class="page-title">Dashboard Simulado</span>
+                    <div class="mode-toggle" id="sim-algo-selector">
+                        <!-- populated dynamically -->
+                    </div>
+                    <div class="mode-toggle" id="sim-filter-selector">
+                        <button class="mode-btn active" onclick="setFilter('active')">Ativos</button>
+                        <button class="mode-btn" onclick="setFilter('all')">Todos</button>
+                    </div>
+                    <select id="sim-group-filter" onchange="setGroupFilter(this.value)" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">
+                        <option value="">Todos os Groups</option>
+                    </select>
+                </div>
+                <div class="status-bar">
+                    <div class="ws-indicator"><div class="ws-dot off" id="ws-binance-sim"></div><span>Binance</span><span class="latency-val latency-na" id="lat-binance-sim">--</span></div>
+                    <div class="ws-indicator"><div class="ws-dot off" id="ws-poly-market-sim"></div><span>Market</span><span class="latency-val latency-na" id="lat-poly-market-sim">--</span></div>
+                    <div class="ws-indicator"><span>CLOB</span><span class="latency-val latency-na" id="lat-clob-rest-sim">--</span></div>
+                </div>
+            </div>
+            <div class="page-body">
+                <div class="grid" id="grid-sim">
+                    <div class="empty-state">
+                        <h2>Aguardando mercados...</h2>
+                        <p>Os mercados aparecem aqui quando forem assinados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Algoritmos -->
+        <div class="page" id="page-algos">
+            <div class="page-header">
+                <span class="page-title">Algoritmos</span>
+                <button onclick="fetchAlgorithmsPage()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Recarregar</button>
+            </div>
+            <div class="page-body">
+                <div class="config-section">
+                    <div class="config-section-title">Adicionar Algoritmo</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                        <div style="flex:1;min-width:120px;">
+                            <div class="config-desc" style="margin-bottom:4px;">Nome</div>
+                            <input id="algo-name" class="config-input" style="width:100%" placeholder="SIGMA">
+                        </div>
+                        <div style="flex:1;min-width:120px;">
+                            <div class="config-desc" style="margin-bottom:4px;">Motor</div>
+                            <select id="algo-engine" class="config-input" style="width:100%"></select>
+                        </div>
+                        <button onclick="addAlgorithm()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Adicionar</button>
+                    </div>
+                </div>
+                <div class="config-section">
+                    <div class="config-section-title">Algoritmos Configurados</div>
+                    <div id="algo-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Configuracoes -->
+        <div class="page" id="page-config">
+            <div class="page-header">
+                <span class="page-title">Configuracoes de Trading</span>
+            </div>
+            <div class="page-body" style="padding:20px 24px;max-width:600px;">
+                <div id="config-container">
+                    <div class="config-section">
+                        <div class="config-section-title">Abertura de Posicao</div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Delta Threshold</div>
+                                <div class="config-desc">Delta minimo para abrir UP (positivo) ou DOWN (negativo espelhado)</div>
+                            </div>
+                            <input type="number" id="cfg-delta" value="30" min="0" step="1" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Max Trades por Market</div>
+                                <div class="config-desc">Maximo de operacoes por bloco de 5min (0 = sem limite)</div>
+                            </div>
+                            <input type="number" id="cfg-max-trades" value="0" min="0" step="1" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Max SL por Market</div>
+                                <div class="config-desc">Maximo de Stop Loss antes de parar de operar naquele market (0 = sem limite)</div>
+                            </div>
+                            <input type="number" id="cfg-max-sl" value="0" min="0" step="1" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Max Delta Flips</div>
+                                <div class="config-desc">Max inversoes de delta em 30s antes de bloquear abertura (0 = desabilitado)</div>
+                            </div>
+                            <input type="number" id="cfg-max-flips" value="3" min="0" max="20" step="1" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Momentum Confirm</div>
+                                <div class="config-desc">Exige que o delta esteja acelerando na direcao da operacao (janela 2s)</div>
+                            </div>
+                            <select id="cfg-momentum" class="config-input" style="width:80px;">
+                                <option value="false">Off</option>
+                                <option value="true">On</option>
+                            </select>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">End-Game (segundos)</div>
+                                <div class="config-desc">Ultimos N segundos do mercado para protecao end-game (0 = desabilitado)</div>
+                            </div>
+                            <input type="number" id="cfg-endgame-sec" value="10" min="0" max="60" step="1" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">End-Game SL Threshold</div>
+                                <div class="config-desc">No end-game, so fecha SL se bid abaixo deste valor (0.00 a 1.00)</div>
+                            </div>
+                            <input type="number" id="cfg-endgame-thr" value="0.30" min="0" max="1" step="0.05" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">SL Residual Threshold (shares)</div>
+                                <div class="config-desc">Se o SL vende parcial e sobram mais shares que este valor, tenta vender o residual. Abaixo, deixa pro resolve. (0 = sempre retry)</div>
+                            </div>
+                            <input type="number" id="cfg-sl-residual" value="1.0" min="0" max="100" step="0.1" class="config-input">
+                        </div>
+                    </div>
+                    <div class="config-section">
+                        <div class="config-section-title">Simulacao</div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Atraso de Execucao (ms)</div>
+                                <div class="config-desc">Tempo de atraso simulado para abertura e fechamento de ordens (0 = instantaneo)</div>
+                            </div>
+                            <input type="number" id="cfg-exec-delay" value="5000" min="0" max="30000" step="500" class="config-input">
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Spread Penalty (ticks)</div>
+                                <div class="config-desc">Penalidade de spread simulada. 1 tick = 0.01. Piora entry/exit price (0 = sem penalty)</div>
+                            </div>
+                            <input type="number" id="cfg-spread-penalty" value="0" min="0" max="10" step="1" class="config-input">
+                        </div>
+                    </div>
+                    <div class="config-section">
+                        <div class="config-section-title">Filtro de Horas</div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                <div class="config-name">Ativar Filtro de Horas</div>
+                                <div class="config-desc">Quando ligado, so opera nas horas selecionadas (horario SP)</div>
+                            </div>
+                            <select id="cfg-hours-enabled" class="config-input" style="width:80px;">
+                                <option value="false">Off</option>
+                                <option value="true">On</option>
+                            </select>
+                        </div>
+                        <div class="config-row" style="flex-direction:column;align-items:stretch;">
+                            <div class="config-label" style="margin-bottom:10px;">
+                                <div class="config-name">Horas Permitidas (clique para alternar)</div>
+                                <div class="config-desc">Verde = opera / Cinza = parado. Horario de Sao Paulo.</div>
+                            </div>
+                            <div id="cfg-hours-grid" style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;"></div>
+                            <div style="display:flex;gap:8px;margin-top:8px;">
+                                <button onclick="setAllHours(true)" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--green);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Ligar Todas</button>
+                                <button onclick="setAllHours(false)" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Desligar Todas</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-top:20px;">
+                        <button onclick="saveConfig()" style="flex:1;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Salvar Configuracoes</button>
+                        <button onclick="fetchConfig()" style="padding:12px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">Resetar</button>
+                    </div>
+                    <div id="config-status" style="margin-top:12px;font-size:12px;font-weight:600;text-align:center;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* ── State ────────────────────────────────────── */
+        let currentPage = 'sim';
+        let previousData = {};
+        let failCount = 0;
+        let simAlgo = null; // set dynamically from API
+        let simFilter = 'active';
+        let simGroupFilter = '';
+        /* ── DOM refs ─────────────────────────────────── */
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const lastUpdateEl = document.getElementById('last-update');
+        const wsBinanceSim = document.getElementById('ws-binance-sim');
+        const wsPolyMarketSim = document.getElementById('ws-poly-market-sim');
+        const latBinanceSim = document.getElementById('lat-binance-sim');
+        const latPolyMarketSim = document.getElementById('lat-poly-market-sim');
+        const latClobRestSim = document.getElementById('lat-clob-rest-sim');
+
+        /* ── Sidebar toggle (mobile) ──────────────────── */
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        /* ── Algorithm selectors ──────────────────────── */
+        function updateAlgoButtons(container, activeAlgo) {
+            container.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.trim() === activeAlgo);
+            });
+        }
+
+        function setSimAlgo(algo) {
+            simAlgo = algo;
+            updateAlgoButtons(document.getElementById('sim-algo-selector'), algo);
+            previousData = {};
+            fetchMarkets();
+        }
+
+        async function fetchAlgorithms() {
+            try {
+                const res = await fetch('/api/dashboard/algorithms');
+                if (!res.ok) return;
+                const algos = await res.json();
+                const container = document.getElementById('sim-algo-selector');
+                container.innerHTML = '';
+                algos.forEach((a, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mode-btn';
+                    btn.textContent = a.name;
+                    btn.onclick = () => setSimAlgo(a.name);
+                    container.appendChild(btn);
+                    if ((!simAlgo && i === 0) || simAlgo === a.name) {
+                        simAlgo = a.name;
+                        btn.classList.add('active');
+                    }
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        function setFilter(filter) {
+            simFilter = filter;
+            updateAlgoButtons(document.getElementById('sim-filter-selector'), filter === 'active' ? 'Ativos' : 'Todos');
+            previousData = {};
+            fetchMarkets();
+        }
+
+        function setGroupFilter(group) {
+            simGroupFilter = group;
+            previousData = {};
+            fetchMarkets();
+        }
+
+        function updateGroupFilterOptions(markets) {
+            const sel = document.getElementById('sim-group-filter');
+            const groups = [...new Set((markets || []).map(m => m.marketGroup).filter(Boolean))].sort();
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Todos os Groups</option>' +
+                groups.map(g => `<option value="${g}" ${g === current ? 'selected' : ''}>${g}</option>`).join('');
+        }
+
+
+        /* ── Navigation ───────────────────────────────── */
+        function navigate(page) {
+            currentPage = page;
+            previousData = {};
+
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+
+            document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === page);
+            });
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+
+            if (page === 'algos') {
+                fetchAlgorithmsPage();
+                return;
+            }
+
+            if (page === 'config') {
+                fetchConfig();
+                return;
+            }
+
+            fetchMarkets();
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch(e) {}
+            window.location.href = '/login';
+        }
+
+        /* ── WS / Trading status ──────────────────────── */
+        function renderWsStatus(wsStatus) {
+            if (!wsStatus) return;
+            wsBinanceSim.className = 'ws-dot ' + (wsStatus.binance ? 'on' : 'off');
+            wsPolyMarketSim.className = 'ws-dot ' + (wsStatus.polyMarket ? 'on' : 'off');
+        }
+
+        function latencyClass(ms) {
+            if (ms < 0) return 'latency-na';
+            if (ms <= 100) return 'latency-good';
+            if (ms <= 300) return 'latency-warn';
+            return 'latency-bad';
+        }
+
+        function formatLatency(ms) {
+            if (ms == null || ms < 0) return '--';
+            return ms + 'ms';
+        }
+
+        function renderLatency(latency) {
+            if (!latency) return;
+            const pairs = [
+                ['binance', latBinanceSim],
+                ['polyMarketWs', latPolyMarketSim],
+                ['polyClobRest', latClobRestSim],
+            ];
+            pairs.forEach(([key, el]) => {
+                const ms = latency[key];
+                const text = formatLatency(ms);
+                const cls = 'latency-val ' + latencyClass(ms != null ? ms : -1);
+                el.textContent = text;
+                el.className = cls;
+            });
+        }
+
+        /* ── Helpers ──────────────────────────────────── */
+        function formatTimer(seconds) {
+            if (!seconds || seconds <= 0) return '0:00';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return m + ':' + String(s).padStart(2, '0');
+        }
+
+        function timerClass(seconds) {
+            if (seconds <= 30) return 'urgent';
+            if (seconds <= 90) return 'warning';
+            return 'ok';
+        }
+
+        function pSuccessColor(p) {
+            if (p >= 0.7) return 'var(--green)';
+            if (p >= 0.4) return 'var(--yellow)';
+            if (p >= 0.2) return 'var(--orange)';
+            return 'var(--red)';
+        }
+
+        /* ── Regime & filter helpers ──────────────────── */
+        function regimeShort(label) {
+            if (!label) return 'NEUTRAL';
+            switch (label) {
+                case 'TREND_STRONG': return 'TREND+';
+                case 'TREND_MODERATE': return 'TREND';
+                case 'CHOP_MODERATE': return 'CHOP';
+                case 'CHOP_HARD': return 'CHOP-';
+                default: return 'NEUTRAL';
+            }
+        }
+
+        function effColor(v) {
+            if (v >= 0.6) return 'var(--green)';
+            if (v >= 0.35) return 'var(--yellow)';
+            return 'var(--red)';
+        }
+
+        function decayBadgeClass(label) {
+            if (!label) return 'flat';
+            return label.toLowerCase();
+        }
+
+        function endRiskClass(label) {
+            if (label === 'HIGH' || label === 'EXTREME') return 'negative';
+            return 'positive';
+        }
+
+        function riskMetricClass(v, threshold) {
+            return v >= threshold ? 'negative' : 'neutral';
+        }
+
+        /* ── Coin helpers ─────────────────────────────── */
+        function coinSymbol(name) {
+            if (!name) return '?';
+            const upper = name.toUpperCase();
+            if (upper.startsWith('BTC')) return 'B';
+            if (upper.startsWith('ETH')) return 'E';
+            if (upper.startsWith('SOL')) return 'S';
+            if (upper.startsWith('DOGE')) return 'D';
+            return upper.charAt(0);
+        }
+
+        function coinColor(name) {
+            if (!name) return '#666';
+            const upper = name.toUpperCase();
+            if (upper.startsWith('BTC')) return '#f7931a';
+            if (upper.startsWith('ETH')) return '#627eea';
+            if (upper.startsWith('SOL')) return '#9945ff';
+            if (upper.startsWith('DOGE')) return '#c2a633';
+            return '#3b82f6';
+        }
+
+        function pnlClass(v) {
+            if (v > 0) return 'positive';
+            if (v < 0) return 'negative';
+            return 'neutral';
+        }
+
+        function pnlSign(v) {
+            return v > 0 ? '+' + v.toFixed(4) : v.toFixed(4);
+        }
+
+        /* ── Position / Entry rendering ───────────────── */
+        function getActiveEntries(history) {
+            if (!history) return [];
+            return history.filter(e => e.status === 'OPENING' || e.status === 'OPENED' || e.status === 'CLOSING');
+        }
+
+        function getClosedEntries(history) {
+            if (!history) return [];
+            return history.filter(e => e.status === 'CLOSED' || e.status === 'RESOLVED' || e.status === 'FAILED');
+        }
+
+        function renderPositionBanners(entries, m) {
+            return entries.map(e => {
+                const isUp = e.outcome === 'UP';
+                const symbol = isUp ? '&#9650;' : '&#9660;';
+                const label = e.outcome;
+
+                if (e.status === 'OPENING') {
+                    return `<div class="position-banner pos-opening">
+                        <span class="pos-side">${symbol} ${label} Abrindo...</span>
+                        <div class="pos-details">
+                            <div class="pos-detail-item"><span class="pos-detail-label">Status</span><span class="pos-detail-value">OPENING</span></div>
+                        </div>
+                    </div>`;
+                }
+
+                if (e.status === 'CLOSING') {
+                    return `<div class="position-banner pos-closing">
+                        <span class="pos-side">${symbol} ${label} Fechando...</span>
+                        <div class="pos-details">
+                            <div class="pos-detail-item"><span class="pos-detail-label">Entry</span><span class="pos-detail-value">${e.entryPrice.toFixed(3)}</span></div>
+                            <div class="pos-detail-item"><span class="pos-detail-label">Size</span><span class="pos-detail-value">${e.size.toFixed(2)}</span></div>
+                        </div>
+                    </div>`;
+                }
+
+                const bid = isUp ? m.upBid : m.downBid;
+                const currentPnl = bid ? (bid - e.entryPrice) * e.size : 0;
+                const bannerClass = isUp ? 'pos-up' : 'pos-down';
+
+                return `<div class="position-banner ${bannerClass}">
+                    <span class="pos-side">${symbol} ${label} Aberto</span>
+                    <div class="pos-details">
+                        <div class="pos-detail-item"><span class="pos-detail-label">Entry</span><span class="pos-detail-value">${e.entryPrice.toFixed(3)}</span></div>
+                        <div class="pos-detail-item"><span class="pos-detail-label">Size</span><span class="pos-detail-value">${e.size.toFixed(2)}</span></div>
+                        <div class="pos-detail-item"><span class="pos-detail-label">PnL Live</span>
+                            <span class="pos-detail-value" style="color:${currentPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${currentPnl >= 0 ? '+' : ''}${currentPnl.toFixed(4)}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderEntryHistory(entries) {
+            if (!entries || entries.length === 0) return '';
+
+            const rows = entries.map(e => {
+                const isWin = e.pnl >= 0;
+                const sideClass = e.outcome === 'UP' ? 'side-up' : 'side-down';
+                const sideSymbol = e.outcome === 'UP' ? '&#9650;' : '&#9660;';
+
+                let rowClass, badgeClass, badgeLabel;
+                if (e.status === 'FAILED') {
+                    rowClass = 'entry-sl'; badgeClass = 'badge-fail'; badgeLabel = 'FAIL';
+                } else if (e.status === 'RESOLVED') {
+                    rowClass = isWin ? 'entry-resolve-win' : 'entry-resolve-loss';
+                    badgeClass = isWin ? 'badge-resolve-win' : 'badge-resolve-loss';
+                    badgeLabel = isWin ? 'RESOLVE +' : 'RESOLVE -';
+                } else if (e.sideClose === 'SL') {
+                    rowClass = 'entry-sl'; badgeClass = 'badge-sl'; badgeLabel = 'SL';
+                } else if (e.sideClose === 'TP') {
+                    rowClass = 'entry-tp'; badgeClass = 'badge-tp'; badgeLabel = 'TP';
+                } else {
+                    rowClass = 'entry-sl'; badgeClass = 'badge-sl'; badgeLabel = e.sideClose || 'CLOSED';
+                }
+
+                const exitLabel = e.status === 'RESOLVED'
+                    ? (e.exitPrice === 1.0 ? '1.000' : '0.000')
+                    : e.exitPrice.toFixed(3);
+
+                const sizeLabel = e.size ? e.size.toFixed(2) : '-';
+
+                const reasonBadge = e.closeReason && e.closeReason !== 'DELTA_REVERSAL'
+                    ? `<span class="entry-close-badge badge-smart">${e.closeReason}</span>`
+                    : '';
+
+                return `<div class="entry-row ${rowClass}">
+                    <span class="entry-side-badge ${sideClass}">${sideSymbol} ${e.outcome}</span>
+                    <span class="entry-prices">${e.entryPrice.toFixed(3)} <span class="entry-arrow">&rarr;</span> ${exitLabel}</span>
+                    <span class="entry-size">${sizeLabel}</span>
+                    <span class="entry-close-badge ${badgeClass}">${badgeLabel}</span>
+                    ${reasonBadge}
+                    <span class="entry-pnl ${isWin ? 'pos' : 'neg'}">${e.pnl >= 0 ? '+' : ''}${e.pnl.toFixed(4)}</span>
+                </div>`;
+            }).join('');
+
+            return `<div class="entry-history"><div class="entry-history-title">Entradas</div>${rows}</div>`;
+        }
+
+
+
+        /* ── Book Depth ───────────────────────────────── */
+        function renderBookDepth(m) {
+            if (!m.upBook && !m.downBook) return '';
+
+            function renderSide(book, label) {
+                if (!book) return `<div class="book-side"><div class="book-side-title">${label}</div><div style="font-size:9px;color:var(--text-dim);text-align:center">--</div></div>`;
+
+                const bids = (book.bidLevels || []).slice(0, 3).map(l =>
+                    `<div class="book-level bid"><span class="bl-price">${l.price.toFixed(2)}</span><span class="bl-size">${l.size.toFixed(1)}</span></div>`
+                ).join('');
+                const asks = (book.askLevels || []).slice(0, 3).map(l =>
+                    `<div class="book-level ask"><span class="bl-price">${l.price.toFixed(2)}</span><span class="bl-size">${l.size.toFixed(1)}</span></div>`
+                ).join('');
+
+                return `<div class="book-side">
+                    <div class="book-side-title">${label} (spr ${book.spread ? book.spread.toFixed(2) : '--'})</div>
+                    ${bids}${asks}
+                </div>`;
+            }
+
+            return `<div class="book-depth">
+                ${renderSide(m.upBook, 'UP Book')}
+                ${renderSide(m.downBook, 'DOWN Book')}
+            </div>`;
+        }
+
+        /* ── Market cards ─────────────────────────────── */
+        function renderHorizonPrediction(hp) {
+            if (!hp) {
+                return `<div class="block-pred">
+                    <span class="bp-arrow" style="color:var(--text-dim)">?</span>
+                    <div class="bp-info">
+                        <span class="bp-title">Horizon H4 (1m \u2192 end of block)</span>
+                        <span class="bp-prices" style="color:var(--text-dim)">Aguardando minuto 1...</span>
+                    </div>
+                </div>`;
+            }
+
+            const isUp = hp.direction === 'UP';
+            const arrow = isUp ? '\u25B2' : '\u25BC';
+            const arrowCls = isUp ? 'up' : 'down';
+            const conf = (hp.confidence * 100).toFixed(0);
+            const thresholdStr = hp.modelThreshold != null ? hp.modelThreshold.toFixed(2) : '—';
+            const closeStr = hp.closeMid != null ? hp.closeMid.toFixed(2) : '...';
+
+            let statusCls = '';
+
+            // Badge Candle hit
+            let candleBadge = '';
+            if (hp.hit === true) {
+                candleBadge = '<span style="font-size:8px;font-weight:700;color:var(--green)">Candle \u2713</span>';
+            } else if (hp.hit === false) {
+                candleBadge = '<span style="font-size:8px;font-weight:700;color:var(--red)">Candle \u2717</span>';
+            }
+
+            // Badge Resolve hit
+            let resolveBadge = '';
+            if (hp.hitResolve === true) {
+                resolveBadge = '<span style="font-size:8px;font-weight:700;color:var(--green)">Resolve \u2713</span>';
+            } else if (hp.hitResolve === false) {
+                resolveBadge = '<span style="font-size:8px;font-weight:700;color:var(--red)">Resolve \u2717</span>';
+            } else {
+                resolveBadge = '<span style="font-size:8px;font-weight:600;color:var(--text-dim)">Resolve ...</span>';
+            }
+
+            if (hp.hitResolve === true && hp.hit === true) statusCls = 'hit';
+            else if (hp.hitResolve === false || hp.hit === false) statusCls = 'miss';
+
+            let closeMidHtml;
+            if (hp.closeMid != null) {
+                const closeAbove = hp.closeMid > (hp.modelThreshold || 0);
+                closeMidHtml = `<span style="color:var(${closeAbove ? '--green' : '--red'});font-weight:700">${closeStr}</span>`;
+            } else {
+                closeMidHtml = `<span style="color:var(--text-dim)">${closeStr}</span>`;
+            }
+
+            return `<div class="block-pred ${statusCls}">
+                <span class="bp-arrow ${arrowCls}">${arrow}</span>
+                <div class="bp-info">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <span class="bp-title">Horizon H4 (1m \u2192 end)</span>
+                        ${candleBadge}
+                        ${resolveBadge}
+                    </div>
+                    <span class="bp-prices">Thr: ${thresholdStr} \u2192 ${closeMidHtml}</span>
+                </div>
+                <span class="bp-conf" style="color:var(${isUp ? '--green' : '--red'})">${conf}%</span>
+            </div>`;
+        }
+
+        function renderBlockPrediction(bp) {
+            if (!bp) {
+                return `<div class="block-pred">
+                    <span class="bp-arrow" style="color:var(--text-dim)">?</span>
+                    <div class="bp-info">
+                        <span class="bp-title">Block Prediction (5m)</span>
+                        <span class="bp-prices" style="color:var(--text-dim)">Aguardando candle 5m...</span>
+                    </div>
+                </div>`;
+            }
+
+            const isUp = bp.direction === 'UP';
+            const arrow = isUp ? '\u25B2' : '\u25BC';
+            const arrowCls = isUp ? 'up' : 'down';
+            const conf = (bp.confidence * 100).toFixed(0);
+            const thresholdStr = bp.modelThreshold != null ? bp.modelThreshold.toFixed(2) : '—';
+            const marketOpenStr = bp.marketOpen != null ? bp.marketOpen.toFixed(2) : '...';
+            const closeStr = bp.closeMid != null ? bp.closeMid.toFixed(2) : '...';
+
+            // Status do hit
+            let statusCls = '';
+            let hitIcon = '';
+            if (bp.hit === true) {
+                statusCls = 'hit';
+                hitIcon = '<span class="bp-hit" style="color:var(--green)">\u2713</span>';
+            } else if (bp.hit === false) {
+                statusCls = 'miss';
+                hitIcon = '<span class="bp-hit" style="color:var(--red)">\u2717</span>';
+            }
+
+            // Badge VALID/INVALID
+            let validBadge = '';
+            if (bp.valid === true) {
+                validBadge = '<span style="font-size:9px;font-weight:800;color:var(--green);background:rgba(34,197,94,0.15);padding:1px 6px;border-radius:4px">VALID</span>';
+            } else if (bp.valid === false) {
+                validBadge = '<span style="font-size:9px;font-weight:800;color:var(--red);background:rgba(239,68,68,0.15);padding:1px 6px;border-radius:4px">INVALID</span>';
+            } else {
+                validBadge = '<span style="font-size:9px;font-weight:600;color:var(--text-dim);background:var(--surface);padding:1px 6px;border-radius:4px">PENDING</span>';
+            }
+
+            // Preços: threshold → marketOpen → close
+            let marketOpenHtml;
+            if (bp.marketOpen != null) {
+                const mktAbove = bp.marketOpen > (bp.modelThreshold || 0);
+                marketOpenHtml = `<span style="color:var(${mktAbove ? '--green' : '--red'});font-weight:600">${marketOpenStr}</span>`;
+            } else {
+                marketOpenHtml = `<span style="color:var(--text-dim)">${marketOpenStr}</span>`;
+            }
+
+            let closeMidHtml;
+            if (bp.closeMid != null) {
+                const closeUp = bp.closeMid > (bp.modelThreshold || 0);
+                closeMidHtml = `<span style="color:var(${closeUp ? '--green' : '--red'});font-weight:700">${closeStr}</span>`;
+            } else {
+                closeMidHtml = `<span style="color:var(--text-dim)">${closeStr}</span>`;
+            }
+
+            // Badge Candle hit
+            let candleBadge = '';
+            if (bp.hit === true) {
+                candleBadge = '<span style="font-size:8px;font-weight:700;color:var(--green)">Candle \u2713</span>';
+            } else if (bp.hit === false) {
+                candleBadge = '<span style="font-size:8px;font-weight:700;color:var(--red)">Candle \u2717</span>';
+            }
+
+            // Badge Resolve hit
+            let resolveBadge = '';
+            if (bp.hitResolve === true) {
+                resolveBadge = '<span style="font-size:8px;font-weight:700;color:var(--green)">Resolve \u2713</span>';
+            } else if (bp.hitResolve === false) {
+                resolveBadge = '<span style="font-size:8px;font-weight:700;color:var(--red)">Resolve \u2717</span>';
+            } else {
+                resolveBadge = '<span style="font-size:8px;font-weight:600;color:var(--text-dim)">Resolve ...</span>';
+            }
+
+            // Borda: verde se candle+resolve ambos hit, vermelho se algum miss resolvido
+            if (bp.hitResolve === true && bp.hit === true) statusCls = 'hit';
+            else if (bp.hitResolve === false || bp.hit === false) statusCls = 'miss';
+
+            return `<div class="block-pred ${statusCls}">
+                <span class="bp-arrow ${arrowCls}">${arrow}</span>
+                <div class="bp-info">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <span class="bp-title">Block Prediction (5m)</span>
+                        ${validBadge}
+                        ${candleBadge}
+                        ${resolveBadge}
+                    </div>
+                    <span class="bp-prices">Thr: ${thresholdStr} | Mkt: ${marketOpenHtml} \u2192 ${closeMidHtml}</span>
+                </div>
+                <span class="bp-conf" style="color:var(${isUp ? '--green' : '--red'})">${conf}%</span>
+            </div>`;
+        }
+
+        function renderInferenceRow(inferences, blockOpenPrice) {
+            const maxMinutes = 5;
+            let dots = '';
+            for (let i = 1; i <= maxMinutes; i++) {
+                const inf = inferences ? inferences.find(p => p.minute === i) : null;
+                if (inf) {
+                    const isUp = inf.direction === 'UP';
+                    const arrow = isUp ? '\u25B2' : '\u25BC';
+                    const conf = (inf.confidence * 100).toFixed(0);
+                    const cls = isUp ? 'up' : 'down';
+
+                    // Status: hit, miss ou pendente
+                    let dotStatus = 'pending';
+                    let hitIcon = '';
+                    if (inf.hit === true) {
+                        dotStatus = 'hit';
+                        hitIcon = '<span class="dot-hit" style="color:var(--green)">\u2713</span>';
+                    } else if (inf.hit === false) {
+                        dotStatus = 'miss';
+                        hitIcon = '<span class="dot-hit" style="color:var(--red)">\u2717</span>';
+                    }
+
+                    // openMid = close do candle gerador → dá continuidade visual
+                    // closeMid_pred_N == openMid_pred_N+1
+                    const startPrice = inf.openMid;
+                    const startStr = startPrice != null ? startPrice.toFixed(2) : '—';
+                    let closeHtml;
+                    if (inf.closeMid != null) {
+                        const closeAbove = inf.closeMid > startPrice;
+                        closeHtml = `<span class="dot-close ${closeAbove ? 'up' : 'down'}">${inf.closeMid.toFixed(2)}</span>`;
+                    } else {
+                        closeHtml = '<span class="dot-close pending">...</span>';
+                    }
+
+                    dots += `<div class="inference-dot ${dotStatus}">
+                        ${hitIcon}
+                        <div class="dot-circle ${cls}">${arrow}</div>
+                        <span class="dot-conf">${conf}%</span>
+                        <div class="dot-prices">
+                            <span class="dot-open">${startStr}</span>
+                            <span style="color:var(--text-dim);font-size:7px">\u2193</span>
+                            ${closeHtml}
+                        </div>
+                    </div>`;
+                } else {
+                    dots += `<div class="inference-dot pending">
+                        <div class="dot-circle empty">${i}</div>
+                        <span class="dot-conf">—</span>
+                        <div class="dot-prices">
+                            <span class="dot-open">—</span>
+                            <span style="color:var(--text-dim);font-size:7px">\u2193</span>
+                            <span class="dot-close pending">—</span>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            const openLabel = blockOpenPrice != null
+                ? `<span style="font-size:9px;color:var(--accent);font-weight:600">Open ${blockOpenPrice.toFixed(2)}</span>`
+                : '';
+
+            return `<div style="margin-bottom:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <span style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">ML Predictions</span>
+                    ${openLabel}
+                </div>
+                <div class="inference-row">
+                    ${dots}
+                </div>
+            </div>`;
+        }
+
+        function renderMarkets(markets, gridId) {
+            const grid = document.getElementById(gridId);
+
+            if (!markets || markets.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><h2>Nenhum mercado ativo</h2><p>Aguardando mercados serem assinados pelo sistema.</p></div>`;
+                return;
+            }
+
+            markets.sort((a, b) => {
+                const aActive = a.timeRemaining > 0 ? 1 : 0;
+                const bActive = b.timeRemaining > 0 ? 1 : 0;
+                if (aActive !== bActive) return bActive - aActive;
+                return b.unixTime - a.unixTime;
+            });
+
+            const html = markets.map(m => {
+                const prev = previousData[m.unixTime];
+                const changed = prev && (prev.midPrice !== m.midPrice || prev.tickCount !== m.tickCount);
+
+                const isResolved = m.resolved;
+                const outcomeUp = isResolved && m.outcome && m.outcome.toLowerCase() === 'up';
+                const outcomeDown = isResolved && m.outcome && m.outcome.toLowerCase() === 'down';
+
+                let cardExtra = '';
+                if (outcomeUp) cardExtra = 'resolved-up-card';
+                else if (outcomeDown) cardExtra = 'resolved-down-card';
+
+                let resolvedHtml = '';
+                if (outcomeUp) resolvedHtml = '<span class="resolved-badge resolved-up">&#9650; RESOLVIDO UP</span>';
+                else if (outcomeDown) resolvedHtml = '<span class="resolved-badge resolved-down">&#9660; RESOLVIDO DOWN</span>';
+
+                return `<div class="card ${changed ? 'flash' : ''} ${cardExtra}" data-unix="${m.unixTime}">
+                    <div class="card-header">
+                        <div>
+                            <div class="market-name"><span class="coin-icon" style="background:${coinColor(m.displayName || m.marketGroup)}">${coinSymbol(m.displayName || m.marketGroup)}</span>${escHtml(m.displayName || m.marketGroup || 'unknown')} #${m.unixTime}</div>
+                            <div class="market-time">${m.timeSP} (SP)</div>
+                        </div>
+                        ${isResolved ? resolvedHtml : `<div class="timer ${timerClass(m.timeRemaining)}">${formatTimer(m.timeRemaining)}</div>`}
+                    </div>
+                    ${renderBlockPrediction(m.blockPrediction)}
+                    ${renderHorizonPrediction(m.horizonPrediction)}
+                    ${renderInferenceRow(m.inferences, m.blockOpenPrice)}
+                    <div class="metrics">
+                        <div class="metric"><div class="metric-label">Mid</div><div class="metric-value neutral">${m.midPrice ? m.midPrice.toFixed(2) : '—'}</div></div>
+                        <div class="metric"><div class="metric-label">Time Left</div><div class="metric-value ${timerClass(m.timeRemaining)}">${formatTimer(m.timeRemaining)}</div></div>
+                        <div class="metric"><div class="metric-label">Ticks</div><div class="metric-value neutral">${m.tickCount ?? 0}</div></div>
+                        <div class="metric"><div class="metric-label">Tick/s</div><div class="metric-value neutral">${((elapsed) => elapsed > 0 ? ((m.tickCount ?? 0) / elapsed).toFixed(1) : '—')((m.blockDurationSeconds || 300) - m.timeRemaining)}</div></div>
+                        <div class="metric"><div class="metric-label">Up Bid</div><div class="metric-value neutral">${m.upBid ? m.upBid.toFixed(3) : '—'}</div></div>
+                        <div class="metric"><div class="metric-label">Up Ask</div><div class="metric-value neutral">${m.upAsk ? m.upAsk.toFixed(3) : '—'}</div></div>
+                        <div class="metric"><div class="metric-label">Down Bid</div><div class="metric-value neutral">${m.downBid ? m.downBid.toFixed(3) : '—'}</div></div>
+                        <div class="metric"><div class="metric-label">Down Ask</div><div class="metric-value neutral">${m.downAsk ? m.downAsk.toFixed(3) : '—'}</div></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            grid.innerHTML = html;
+            previousData = {};
+            markets.forEach(m => previousData[m.unixTime] = m);
+        }
+
+        /* ── Fetch ────────────────────────────────────── */
+        async function fetchMarkets() {
+            try {
+                const res = await fetch('/api/dashboard/markets?mode=sim&algorithm=' + simAlgo);
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                if (!res.ok) throw new Error(res.status);
+                const data = await res.json();
+
+                renderWsStatus(data.wsStatus);
+                renderLatency(data.latency);
+
+                let allMarkets = data.markets || [];
+                updateGroupFilterOptions(allMarkets);
+
+                let filtered = allMarkets;
+                if (simFilter === 'active') {
+                    filtered = filtered.filter(m => m.timeRemaining > 0 && !m.resolved);
+                }
+                if (simGroupFilter) {
+                    filtered = filtered.filter(m => m.marketGroup === simGroupFilter);
+                }
+                renderMarkets(filtered, 'grid-sim');
+
+                const count = filtered.length;
+                failCount = 0;
+                statusDot.className = 'status-dot';
+                statusText.textContent = count + ' mercado' + (count !== 1 ? 's' : '');
+                lastUpdateEl.textContent = new Date().toLocaleTimeString('pt-BR');
+            } catch (e) {
+                failCount++;
+                if (failCount > 3) {
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Offline';
+                }
+            }
+        }
+
+
+
+
+        /* removed: heatmap, entry-history, algo-compare pages */
+        /* ── Hours Grid ───────────────────────────────── */
+        let cfgAllowedHours = new Set();
+        for (let h = 0; h < 24; h++) cfgAllowedHours.add(h);
+
+        function renderHoursGrid() {
+            const grid = document.getElementById('cfg-hours-grid');
+            grid.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                const btn = document.createElement('button');
+                btn.textContent = String(h).padStart(2, '0');
+                btn.dataset.hour = h;
+                const on = cfgAllowedHours.has(h);
+                btn.style.cssText = `padding:8px 0;border-radius:6px;border:1px solid ${on ? 'var(--green)' : 'var(--border)'};background:${on ? 'rgba(34,197,94,0.15)' : 'var(--surface2)'};color:${on ? 'var(--green)' : 'var(--text-dim)'};font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;`;
+                btn.onclick = () => toggleHour(h);
+                grid.appendChild(btn);
+            }
+        }
+
+        function toggleHour(h) {
+            if (cfgAllowedHours.has(h)) cfgAllowedHours.delete(h);
+            else cfgAllowedHours.add(h);
+            renderHoursGrid();
+        }
+
+        function setAllHours(on) {
+            cfgAllowedHours.clear();
+            if (on) { for (let h = 0; h < 24; h++) cfgAllowedHours.add(h); }
+            renderHoursGrid();
+        }
+
+        /* ── Config Page ──────────────────────────────── */
+        /* ── Algorithms Page ──────────────────────────── */
+        async function fetchAlgorithmsPage() {
+            console.log('[AlgosPage] fetching...');
+            try {
+                const [algosRes, enginesRes] = await Promise.all([
+                    fetch('/api/dashboard/algorithms/all'),
+                    fetch('/api/dashboard/algorithms/engines')
+                ]);
+                console.log('[AlgosPage] algosRes status:', algosRes.status, 'enginesRes status:', enginesRes.status);
+
+                if (algosRes.status === 401) { window.location.href = '/login'; return; }
+
+                const algos = await algosRes.json();
+                const engines = await enginesRes.json();
+                console.log('[AlgosPage] algos:', algos.length, 'engines:', engines.length, 'data:', JSON.stringify(algos));
+
+                const sel = document.getElementById('algo-engine');
+                if (!sel) { console.error('[AlgosPage] algo-engine element not found!'); return; }
+                sel.innerHTML = engines.map(e => `<option value="${e}">${e}</option>`).join('');
+
+                const list = document.getElementById('algo-list');
+                if (!list) { console.error('[AlgosPage] algo-list element not found!'); return; }
+
+                if (!algos.length) {
+                    list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Nenhum algoritmo configurado</div>';
+                    console.log('[AlgosPage] no algos found');
+                    return;
+                }
+                list.innerHTML = algos.map(a => {
+                    const running = a.running;
+                    const statusColor = running ? 'var(--green)' : 'var(--text-dim)';
+                    const statusText = running ? 'RODANDO' : 'PARADO';
+                    const activeColor = a.active ? 'var(--green)' : 'var(--yellow)';
+                    const activeText = a.active ? 'ATIVO' : 'INATIVO';
+                    return `<div class="config-row">
+                        <div class="config-label">
+                            <div class="config-name">${escHtml(a.name)}<span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:6px;">${escHtml(a.engine)}</span></div>
+                            <div class="config-desc"><span style="color:${statusColor};font-weight:700;">${statusText}</span> · <span style="color:${activeColor};">${activeText}</span></div>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="toggleAlgoRules('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;">Regras</button>
+                            <button onclick="duplicateAlgo('${a.id}','${escHtml(a.name)}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--purple);background:transparent;color:var(--purple);font-family:inherit;font-size:11px;cursor:pointer;">Copiar</button>
+                            ${a.active
+                                ? `<button onclick="pauseAlgo('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);font-family:inherit;font-size:11px;cursor:pointer;">Pausar</button>`
+                                : `<button onclick="startAlgo('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--green);background:transparent;color:var(--green);font-family:inherit;font-size:11px;cursor:pointer;">Iniciar</button>`
+                            }
+                            <button onclick="removeAlgo('${a.id}','${escHtml(a.name)}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-family:inherit;font-size:11px;cursor:pointer;">Remover</button>
+                        </div>
+                    </div>
+                    <div id="algo-rules-${a.id}" style="display:none;grid-column:1/-1;padding:12px;background:var(--surface2);border-radius:8px;margin-top:-6px;"></div>`;
+                }).join('');
+            } catch (e) { console.error('[AlgosPage] FAILED:', e.message, e); }
+        }
+
+        async function addAlgorithm() {
+            const name = document.getElementById('algo-name').value.trim();
+            const engine = document.getElementById('algo-engine').value;
+            if (!name) return;
+            await fetch(`/api/dashboard/algorithms/add?name=${encodeURIComponent(name)}&engine=${encodeURIComponent(engine)}`, { method: 'POST' });
+            document.getElementById('algo-name').value = '';
+            fetchAlgorithmsPage();
+            fetchAlgorithms();
+        }
+
+        async function startAlgo(id) {
+            await fetch(`/api/dashboard/algorithms/start?id=${id}`, { method: 'POST' });
+            fetchAlgorithmsPage();
+            fetchAlgorithms();
+        }
+
+        async function pauseAlgo(id) {
+            await fetch(`/api/dashboard/algorithms/pause?id=${id}`, { method: 'POST' });
+            fetchAlgorithmsPage();
+            fetchAlgorithms();
+        }
+
+        async function duplicateAlgo(id, sourceName) {
+            const newName = prompt(`Copiar algoritmo ${sourceName}.\nDigite o nome do novo algoritmo:`);
+            if (!newName || !newName.trim()) return;
+            await fetch(`/api/dashboard/algorithms/duplicate?id=${id}&name=${encodeURIComponent(newName.trim())}`, { method: 'POST' });
+            fetchAlgorithmsPage();
+            fetchAlgorithms();
+        }
+
+        async function removeAlgo(id, name) {
+            if (!confirm(`Remover algoritmo ${name}?`)) return;
+            await fetch(`/api/dashboard/algorithms/remove?id=${id}`, { method: 'POST' });
+            fetchAlgorithmsPage();
+            fetchAlgorithms();
+        }
+
+        let ruleTypesCache = null;
+
+        async function toggleAlgoRules(algoId) {
+            const el = document.getElementById('algo-rules-' + algoId);
+            if (el.style.display !== 'none') {
+                el.style.display = 'none';
+                return;
+            }
+            el.style.display = 'block';
+            await loadAlgoRules(algoId);
+        }
+
+        async function loadAlgoRules(algoId) {
+            const el = document.getElementById('algo-rules-' + algoId);
+            if (!ruleTypesCache) {
+                const rtRes = await fetch('/api/dashboard/algorithms/rule-types');
+                ruleTypesCache = await rtRes.json();
+            }
+            const res = await fetch(`/api/dashboard/algorithms/${algoId}/rules`);
+            const data = await res.json();
+            const rules = data.rules || [];
+            const existingTypes = new Set(rules.map(r => r.ruleType));
+
+            let html = '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Regras de ' + escHtml(data.name) + '</div>';
+
+            if (rules.length === 0) {
+                html += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Nenhuma regra configurada</div>';
+            }
+
+            for (const r of rules) {
+                const rt = ruleTypesCache.find(t => t.name === r.ruleType);
+                const desc = rt ? rt.description : r.ruleType;
+                const phaseColor = r.phase === 'ENTRY' ? 'var(--green)' : 'var(--orange)';
+                const statusBg = r.enabled ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)';
+                const statusColor = r.enabled ? 'var(--green)' : 'var(--text-dim)';
+                const statusText = r.enabled ? 'ATIVA' : 'INATIVA';
+                const uid = algoId + '-' + r.ruleType;
+                html += `<div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--bg);">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:10px;font-weight:700;color:${phaseColor};padding:2px 6px;border-radius:3px;background:${phaseColor === 'var(--green)' ? 'rgba(34,197,94,0.12)' : 'rgba(249,115,22,0.12)'};">${r.phase}</span>
+                        <span style="flex:1;font-size:12px;font-weight:600;">${escHtml(desc)}</span>
+                        <span style="font-size:10px;font-weight:700;color:${statusColor};padding:2px 8px;border-radius:3px;background:${statusBg};">${statusText}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:10px;color:var(--text-dim);min-width:40px;">Valor:</span>
+                        <span style="font-size:13px;font-weight:700;color:var(--text);min-width:50px;">${r.value}</span>
+                        <span style="font-size:10px;color:var(--text-dim);margin-left:8px;">Novo:</span>
+                        <input id="rule-val-${uid}" type="number" step="0.01" value="${r.value}" style="width:70px;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px;text-align:center;">
+                        <button onclick="saveAlgoRule('${algoId}','${r.ruleType}','${uid}')" style="padding:4px 10px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Salvar</button>
+                        <button onclick="toggleAlgoRule('${algoId}','${r.ruleType}',${!r.enabled})" style="padding:4px 10px;border-radius:4px;border:1px solid ${r.enabled ? 'var(--yellow)' : 'var(--green)'};background:transparent;color:${r.enabled ? 'var(--yellow)' : 'var(--green)'};font-family:inherit;font-size:10px;cursor:pointer;">${r.enabled ? 'Desativar' : 'Ativar'}</button>
+                        <button onclick="removeAlgoRule('${algoId}','${r.ruleType}')" style="padding:4px 8px;border-radius:4px;border:1px solid var(--red);background:transparent;color:var(--red);font-family:inherit;font-size:10px;cursor:pointer;">Remover</button>
+                    </div>
+                </div>`;
+            }
+
+            // Add rule dropdown for missing types
+            const missing = ruleTypesCache.filter(t => !existingTypes.has(t.name));
+            if (missing.length > 0) {
+                html += `<div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+                    <select id="add-rule-type-${algoId}" style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;">
+                        ${missing.map(t => `<option value="${t.name}" data-default="${t.defaultValue}">${t.description} (${t.phase})</option>`).join('')}
+                    </select>
+                    <button onclick="addAlgoRule('${algoId}')" style="padding:4px 10px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:11px;cursor:pointer;">Adicionar</button>
+                </div>`;
+            }
+
+            el.innerHTML = html;
+        }
+
+        async function saveAlgoRule(algoId, ruleType, uid) {
+            const val = document.getElementById('rule-val-' + uid).value;
+            await fetch(`/api/dashboard/algorithms/${algoId}/rules/update?ruleType=${ruleType}&value=${val}`, { method: 'POST' });
+            loadAlgoRules(algoId);
+        }
+
+        async function toggleAlgoRule(algoId, ruleType, enabled) {
+            await fetch(`/api/dashboard/algorithms/${algoId}/rules/toggle?ruleType=${ruleType}&enabled=${enabled}`, { method: 'POST' });
+            loadAlgoRules(algoId);
+        }
+
+        async function removeAlgoRule(algoId, ruleType) {
+            await fetch(`/api/dashboard/algorithms/${algoId}/rules/remove?ruleType=${ruleType}`, { method: 'POST' });
+            loadAlgoRules(algoId);
+        }
+
+        async function addAlgoRule(algoId) {
+            const sel = document.getElementById('add-rule-type-' + algoId);
+            const ruleType = sel.value;
+            const defaultVal = sel.selectedOptions[0].dataset.default;
+            await fetch(`/api/dashboard/algorithms/${algoId}/rules/add?ruleType=${ruleType}&value=${defaultVal}`, { method: 'POST' });
+            loadAlgoRules(algoId);
+        }
+
+        async function fetchConfig() {
+            try {
+                const res = await fetch('/api/dashboard/trading/config');
+                if (!res.ok) throw new Error(res.status);
+                const data = await res.json();
+                document.getElementById('cfg-hours-enabled').value = String(data.hoursFilterEnabled || false);
+                cfgAllowedHours = new Set(data.allowedHours || []);
+                renderHoursGrid();
+                document.getElementById('cfg-delta').value = data.deltaThreshold;
+                document.getElementById('cfg-max-trades').value = data.maxTradesPerMarket;
+                document.getElementById('cfg-max-sl').value = data.maxSlPerMarket;
+                document.getElementById('cfg-exec-delay').value = data.executionDelayMs;
+                document.getElementById('cfg-spread-penalty').value = data.spreadPenaltyTicks;
+                document.getElementById('cfg-max-flips').value = data.maxDeltaFlips;
+                document.getElementById('cfg-momentum').value = String(data.momentumConfirmEnabled);
+                document.getElementById('cfg-endgame-sec').value = data.endGameSeconds;
+                document.getElementById('cfg-endgame-thr').value = data.endGameSlThreshold;
+                document.getElementById('cfg-sl-residual').value = data.slResidualThreshold;
+                document.getElementById('config-status').textContent = '';
+            } catch (e) {
+                console.error('Fetch config failed:', e);
+            }
+        }
+
+        async function saveConfig() {
+            const body = {
+                hoursFilterEnabled: document.getElementById('cfg-hours-enabled').value === 'true',
+                allowedHours: Array.from(cfgAllowedHours).sort((a, b) => a - b),
+                deltaThreshold: parseFloat(document.getElementById('cfg-delta').value),
+                maxTradesPerMarket: parseInt(document.getElementById('cfg-max-trades').value),
+                maxSlPerMarket: parseInt(document.getElementById('cfg-max-sl').value),
+                executionDelayMs: parseInt(document.getElementById('cfg-exec-delay').value),
+                spreadPenaltyTicks: parseInt(document.getElementById('cfg-spread-penalty').value),
+                maxDeltaFlips: parseInt(document.getElementById('cfg-max-flips').value),
+                momentumConfirmEnabled: document.getElementById('cfg-momentum').value === 'true',
+                endGameSeconds: parseFloat(document.getElementById('cfg-endgame-sec').value),
+                endGameSlThreshold: parseFloat(document.getElementById('cfg-endgame-thr').value),
+                slResidualThreshold: parseFloat(document.getElementById('cfg-sl-residual').value)
+            };
+            try {
+                const res = await fetch('/api/dashboard/trading/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error(res.status);
+                const data = await res.json();
+                document.getElementById('cfg-hours-enabled').value = String(data.hoursFilterEnabled || false);
+                cfgAllowedHours = new Set(data.allowedHours || []);
+                renderHoursGrid();
+                document.getElementById('cfg-delta').value = data.deltaThreshold;
+                document.getElementById('cfg-max-trades').value = data.maxTradesPerMarket;
+                document.getElementById('cfg-max-sl').value = data.maxSlPerMarket;
+                document.getElementById('cfg-exec-delay').value = data.executionDelayMs;
+                document.getElementById('cfg-spread-penalty').value = data.spreadPenaltyTicks;
+                document.getElementById('cfg-max-flips').value = data.maxDeltaFlips;
+                document.getElementById('cfg-momentum').value = String(data.momentumConfirmEnabled);
+                document.getElementById('cfg-endgame-sec').value = data.endGameSeconds;
+                document.getElementById('cfg-endgame-thr').value = data.endGameSlThreshold;
+                document.getElementById('cfg-sl-residual').value = data.slResidualThreshold;
+                const statusEl = document.getElementById('config-status');
+                statusEl.textContent = 'Configuracoes salvas com sucesso';
+                statusEl.style.color = 'var(--green)';
+                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+            } catch (e) {
+                console.error('Save config failed:', e);
+                const statusEl = document.getElementById('config-status');
+                statusEl.textContent = 'Erro ao salvar: ' + e.message;
+                statusEl.style.color = 'var(--red)';
+            }
+        }
+
+        function truncate(str, max) {
+            return str.length > max ? str.substring(0, max) + '...' : str;
+        }
+
+        function escHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        fetchAlgorithms().then(() => fetchMarkets());
+        setInterval(() => {
+            if (currentPage === 'sim') {
+                fetchMarkets();
+            }
+        }, 1000);
+        setInterval(fetchAlgorithms, 30000); // refresh algo list every 30s
+    </script>
+</body>
+</html>

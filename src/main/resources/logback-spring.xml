@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ─── Console: pattern simples ──────────────────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ─── Logstash TCP: desligado por enquanto ────────────────────────────────
+    <appender name="LOGSTASH_TCP" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH_HOST:-localhost}:5044</destination>
+        <reconnectionDelay>5 seconds</reconnectionDelay>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
+        <writeBufferSize>16384</writeBufferSize>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"yacamin-rafael"}</customFields>
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <version>[ignore]</version>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>5000</maxFlushTime>
+        <appender-ref ref="LOGSTASH_TCP"/>
+    </appender>
+    ──────────────────────────────────────────────────────────────────────────── -->
+
+    <!-- ─── File: log em arquivo para profile local ──────────────────────────── -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/rafael.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ─── Inference file: log separado para predictions ──────────────────────── -->
+    <appender name="INFERENCE_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/rafael-inference.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ─── LOCAL: console + file com DEBUG ────────────────────────────────────── -->
+    <springProfile name="local">
+        <logger name="br.com.yacamin.rafael" level="DEBUG"/>
+        <logger name="br.com.yacamin.rafael.application.service.candle" level="DEBUG"/>
+        <logger name="br.com.yacamin.rafael.application.service.analyse" level="DEBUG"/>
+        <logger name="br.com.yacamin.rafael.application.service.warmup" level="INFO"/>
+        <logger name="br.com.yacamin.rafael.adapter.in.event.KlineListenerAdapter" level="DEBUG"/>
+
+        <!-- Inference services: DEBUG + arquivo separado -->
+        <logger name="br.com.yacamin.rafael.application.service.model" level="DEBUG" additivity="true">
+            <appender-ref ref="INFERENCE_FILE"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- ─── PROD (default): console only (Logstash desligado por enquanto) ───── -->
+    <springProfile name="!local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Silencia logs ruidosos -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.mongodb" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+
+</configuration>
