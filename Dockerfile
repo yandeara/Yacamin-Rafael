@@ -14,6 +14,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
+COPY models/ models/
 
 EXPOSE 8080
 
