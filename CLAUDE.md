@@ -6,30 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A documentacao do projeto Yacamin fica em `D:\Projetos\Yacamin\documentos`. Sempre que o usuario falar de documentacao, buscar e/ou atualizar arquivos nessa pasta.
 
+Documentos relevantes do Rafael:
+- `rafael-predict-logic.md` — Logica completa de predicao (M2M, B2B, H4)
+- `rafael-production-tables.md` — SQLs de producao (PostgreSQL)
+- `yacamin-eventos.md` — Catalogo de eventos (secao Modulo Rafael)
+
 ## Project Overview
 
-Yacamin-Rafael is the **AI/ML module** of the Yacamin ecosystem. Built on Spring Boot 4.0.3 (Java 21), Rafael uses **XGBoost** machine learning models to analyze crypto trading blocks and generate predictions. It combines Polymarket prediction markets with Binance spot market data, processing real-time data through ML-powered analysis for UP/DOWN markets across **multiple symbols and block durations**. Rafael currently inherits the simulation infrastructure from Miguel and will evolve to incorporate XGBoost-based block analysis and prediction capabilities. **Rafael does not execute real trades** — it analyzes and predicts.
-
-### Multi-Market Support
-
-Rafael supports multiple market groups simultaneously, each defined by:
-- **Slug prefix** (e.g., `btc-updown-5m-`, `eth-updown-5m-`, `btc-updown-15m-`)
-- **Block duration** (`FIVE_MIN`, `FIFTEEN_MIN`, `ONE_HOUR`) via `BlockDuration` enum
-- **Binance stream** (e.g., `btcusdt@bookTicker`, `ethusdt@bookTicker`)
-
-Configuration is stored in MongoDB collections `binance_stream_config` and `market_group`, manageable via REST API.
+Yacamin-Rafael is the **AI/ML prediction module** of the Yacamin ecosystem. Built on Spring Boot 4.0.3 (Java 21), Rafael uses **XGBoost** machine learning models to predict crypto price direction (UP/DOWN) at multiple time horizons. It processes real-time Binance kline data, computes technical indicators, and runs three independent prediction logics per 5-minute block. **Rafael does not execute trades** — it predicts and logs results for analysis.
 
 ## Build & Run Commands
 
 ```bash
 ./gradlew build          # Build
-./gradlew bootRun        # Run (port 8080)
+./gradlew bootJar        # Build JAR for deployment
+./gradlew bootRun        # Run locally (port 8080)
 ./gradlew clean build    # Clean build
 ```
 
-Para rodar com MongoDB local (sem afetar o Amitiel):
+Profile local:
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+Docker:
+```bash
+docker build -t yacamin-rafael .
+docker run -p 8080:8080 yacamin-rafael
 ```
 
 No test framework is configured.
@@ -38,166 +41,148 @@ No test framework is configured.
 
 **Hexagonal Architecture (Ports & Adapters)** with event-driven async processing.
 
-### Layers
+### Core Layers
 
-- **`domain/`** — Pure business entities: `Market`, `PolyAsset`, `BlockState`, `PricePoint`, `EntryRecord`, `SimEvent`, `LocalOrderBook`, `Outcome`, `SideClose`, `EntryStatus`, `BlockDuration`, `BinanceStreamConfig`, `MarketGroup`
-- **`application/service/algoritms/`** — Algorithm framework: `BookTickerCalculation` interface, `AlgoCalc` enum, `AlgorithmRegistry`, and 2 algorithm implementations (alpha, gama)
-- **`application/service/algoritms/simulation/`** — Simulation pipeline: market memory, open/close/resolve services, event persistence — all parameterized by `AlgoCalc` and `marketGroup`
-- **`application/service/trading/`** — Shared services: `TradingConfigService`, `LatencyService`/`LatencyMonitorService`, `BinanceStreamConfigService` (stream management), `MarketGroupService` (market group management), `TickDispatchService` (Binance tick routing), `PolyDispatchService` (Polymarket event routing)
-- **`application/service/orderbook/`** — `OrderBookMemoryService`: local order book for VWAP calculations
-- **`application/service/usecase/`** — `ConnectBinanceSpotWebsocketUseCase`
-- **`application/service/auth/`** — `AuthService`/`AuthFilter`: API authentication
-- **`application/configuration/`** — Spring beans: Jackson, OkHttp, RestTemplate, async thread pools
-- **`adapter/out/rest/`** — Outbound REST: Gamma API markets client (`PolymarketGammaMarketsClient`, `PolymarketRestClient`)
-- **`adapter/out/websocket/`** — Outbound WebSockets: Polymarket CLOB (market channel only) + Binance Spot
-- **`adapter/out/persistence/`** — MongoDB repositories: `SimEventRepository`, `BinanceStreamConfigRepository`, `MarketGroupRepository`, `TradingConfigRepository`
-- **`adapter/in/event/`** — Inbound event listeners (Spring `@EventListener` + `@Async`)
-- **`adapter/in/controller/`** — REST API: `DashboardController` (market data, config, streams, groups), `AuthController`
+- **`domain/`** — Entities: `Market`, `SymbolCandle`, `RafaelBar`, `InferencePrediction`, `ModelDescriptor`, `BlockDuration`, `CandleIntervals`, `Frame`
+- **`domain/scylla/entity/`** — JPA entities for PostgreSQL: `Candle1Mn`, `Candle5Mn`, indicator entities (1mn/5mn/15mn/30mn)
+- **`domain/scylla/entity/indicator/`** — Interfaces: `MicrostructureIndicatorEntity`, `MomentumIndicatorEntity`, `TrendIndicatorEntity`, `VolatilityIndicatorEntity`, `VolumeIndicatorEntity`, `TimeIndicatorEntity`
+- **`application/service/model/`** — ML inference pipeline: `ModelRegistryService`, `FeatureExtractorService`, `HeadHunterFeaturesMap`, `FeatureMaskService`, `MinuteByMinuteInferenceService`, `BlockByBlockInferenceService`, `HorizonInferenceService`, `BlockInferenceMemoryService`, `PredictionEventService`
+- **`application/service/warmup/`** — Indicator calculation: 6 group orchestrators (MIC, MOM, TRD, VLT, VOL, TIM) with sub-services per indicator type
+- **`application/service/candle/`** — Warmup pipeline: `WarmupService`, `SyncCheckService`, `BarSeriesCacheService`, `DownloadCandleService`
+- **`application/service/analyse/`** — `AnalyseOrchestratorService`: parallel indicator calculation (6 groups)
+- **`adapter/out/persistence/`** — JPA repositories (PostgreSQL) + MongoDB repositories
+- **`adapter/out/websocket/`** — Binance Spot + Polymarket CLOB WebSockets
+- **`adapter/in/event/`** — Event listeners: `KlineListenerAdapter`, `BinanceListenerAdapter`, `PolyMarketWsMarketListener`
+- **`adapter/in/controller/`** — REST API: `DashboardController`, `AuthController`
 
-### Multi-Algorithm Framework
+### XGBoost Prediction Pipeline
 
-The system supports 2 probability calculation algorithms, defined in `AlgoCalc` enum (order: ALPHA, GAMA):
+Three independent prediction logics run per block:
 
-- **`BookTickerCalculation`** — Common interface with `calculate(BookTickerUpdateResponse tick, String marketGroup, BlockDuration duration)` and `getAlgo()`
-- **`TickResult`** — Shared record: `(marketGroup, blockUnix, pSuccess, delta, distance, sigma)`
-- **`AlgorithmRegistry`** — Spring service that collects all `BookTickerCalculation` beans into `Map<AlgoCalc, BookTickerCalculation>`
+| Logic | Model | Trigger | Predicts | Frequency |
+|---|---|---|---|---|
+| **M2M** (Minute-by-Minute) | `xgb_BTCUSDT_h1_1m` | Every 1m candle close | Next minute direction | 5x per block |
+| **B2B** (Block-by-Block) | `xgb_BTCUSDT_h1_5m` | Every 5m candle close | Next block direction | 1x per block |
+| **H4** (Horizon) | `xgb_BTCUSDT_h4_1m` | First 1m candle of block | End-of-block direction | 1x per block |
 
-**Algorithm implementations** (each in its own sub-package under `algoritms/`):
+Model naming: `{type}_{symbol}_{horizon}_{interval}_{MMYYYY-MMYYYY}.ubj`
+Models loaded from `models/` directory on startup. Invalid names crash startup.
 
-| Algorithm | Package | Description |
-|-----------|---------|-------------|
-| **Alpha** | `algoritms/alpha/` | Simple volatility EMA (alpha=0.1) + Gaussian diffusion. Single 60s window. |
-| **Gama** | `algoritms/gama/` | Aggressive momentum-first. Higher drift/accel weights (1.35/1.60). Stronger deceleration penalty (1.90). |
+### Feature Extraction
 
-Each algorithm maintains its own `BlockState` map with **composite key `"marketGroup|blockUnix"`** for per-group isolation. All share the same base formula: `pSuccess = 1 - exp(-2 * distance² / (sigma² * timeRemaining))` with algorithm-specific distance/sigma calculations.
+- **`HeadHunterFeaturesMap`** — Registry of 309 FeatureDef (name → lambda extractor), exact same order as Mikhael training
+- **`FeatureMaskService.getProdMask()`** — 309 features used in production inference
+- **`AssemblerDto`** — DTO with candle + 7 indicator entities → `buildFeatures(dto, mask)` → `float[]`
+- Feature groups: MIC (97), MOM (90), TRD (26), VLT (46), VOL (37), TIM (13)
 
-### Data Flows
+### Indicator Calculation (Warmup)
 
-**Market Discovery (hourly, per active market group):**
-`PolymarketMarketClobWsAdapter.run()` → iterates `MarketGroupService.getActiveGroups()` → for each group: `discoverGroup(slugPrefix, duration)` → Gamma API (`/markets/slug/{slugPrefix}{unix}`) → extract token IDs → creates sim markets (one per algorithm) in `SimulationMarketMemoryService` → subscribe via WebSocket. Markets to load: `ceil(4200 / durationSeconds)` (~70 min ahead).
+6 indicator groups calculated in parallel by `AnalyseOrchestratorService`:
 
-**Tick Processing (real-time, multi-market dispatch):**
-Binance bookTicker → `SpotMarketDataSocket` (extracts symbol from `"s"` field) → `BookTickerUpdateSocketEvent` → `BinanceListenerAdapter` → `TickDispatchService.dispatch(tick)`:
-1. Identifies stream from symbol (e.g., `btcusdt@bookTicker`)
-2. Looks up market groups for that stream via `MarketGroupService.getGroupsForStream()`
-3. For each group: submits to that group's single-thread executor (`mktgrp-{prefix}`)
-4. Inside executor: iterates all algorithms → `calculate(tick, slugPrefix, duration)` → `SimulationOnBookTickerService.updateMarket()`
+| Group | Service | Features (mask) | Sub-services |
+|---|---|---|---|
+| MIC | MicrostructureWarmupService | 97 | Amihud, Body, Hasbrouck, Kyle, PositionBalance, Range, Return1C, Roll, Wick |
+| MOM | MomentumWarmupService | 90 | CloseReturn, RSI, CMO, WPR, Stoch, Trix, TSI, PPO, ClosePrice, CCI, ROC, MomentumStability |
+| TRD | TrendWarmupService | 26 | EMA, ADX |
+| VLT | VolatilityWarmupService | 46 | ATR, Bollinger, EWMA, Keltner, RangeVol, RealizedVol, Std |
+| VOL | VolumeWarmupService | 37 | ActivityPressure, BAP, Delta, Microburst, OFI, RawMicrostructure, Slope, SVR, VWAP |
+| TIM | TimeWarmupService | 13 | (all in one service) |
 
-**Simulation Pessimism (realistic execution modeling):**
-- **Size**: Budget of 1.1 USDC relative to buy price: `size = 1.1 / ask`. Example: ask=0.50 → size=2.2 shares.
-- **Configurable execution delay**: When opening/closing, position enters OPENING/CLOSING state. The actual entry/exit price is taken from the BID/ASK after the delay (default 5s), simulating real order execution latency.
-- **VWAP fill**: Uses local order book VWAP when available, otherwise raw bid/ask with configurable spread penalty.
-- **PnL with size**: All PnL calculations use `(exitPrice - entryPrice) * size`.
+### Data Flow
 
-**Polymarket Price Events (real-time):**
-`PolyMarketWsMarketListener.onPriceChange()` → `PolyDispatchService.dispatchPriceChange()` → identifies market group via asset ID → submits to group executor → for each algorithm: `SimulationOnPriceChangeService` opens/closes positions based on pSuccess/delta
+```
+Startup:
+  ModelRegistry → loads .ubj models into memory
+  WarmupService → downloads 2000 candles from Binance REST
+                → processes through BarSeries + AnalyseOrchestrator
+                → saves indicators to PostgreSQL
+                → sets live=true
 
-**Market Resolution:**
-`PolyMarketWsMarketListener.onMarketResolve()` → `PolyDispatchService.dispatchResolve()` → identifies market group → submits to group executor → positions settled at 1.0 (won) or 0.0 (lost) → RESOLVE, FEES and PNL events persisted to MongoDB
+Real-time:
+  Binance kline WS → KlineListenerAdapter
+    → persists candle to PostgreSQL
+    → BarSeriesCacheService.update()
+      → AnalyseOrchestrator (saves indicators to PostgreSQL)
+      → MinuteByMinuteInferenceService (M2M)
+      → BlockByBlockInferenceService (B2B)
+      → HorizonInferenceService (H4)
+    → PredictionEventService (saves to MongoDB events + sim_events)
 
-**Time Remaining (independent, every 1 second):**
-`@Scheduled(fixedRate = 1_000)` in `SimulationMarketMemoryService` updates `timeRemaining` using each market's `BlockDuration` for correct end time calculation. This runs independently of Binance ticks.
-
-**Reconnection:**
-WebSocket closes → reconnect event published → async listener → re-subscribe all streams
-
-### Simulation Pipeline (per-algorithm, per-market-group isolation)
-
-All simulation services live in `application/service/algoritms/simulation/` and are parameterized with `AlgoCalc`. State dimension: `(AlgoCalc, marketGroup, blockUnix)`.
-
-- **`SimulationMarketMemoryService`** — `Map<AlgoCalc, Map<String, Market>>` with composite key `"marketGroup|unixTime"`. Each algorithm × market group has its own isolated market state, entry history, and position tracking.
-- **`SimulationOnBookTickerService`** — Updates sim market metrics (pSuccess, delta, distance, sigma, tickCount) and delta tracking (flip detection, momentum). Uses `result.marketGroup()` for lookup.
-- **`SimulationOnPriceChangeService`** — Handles Polymarket price events for a specific algorithm's markets → delegates to open/close services.
-- **`SimulationOpenPositionService`** — Opens positions when: `pSuccess >= 0.85`, `timeRemaining` between 10s and 80% of block duration, delta direction matches outcome. Skips startup block per market group (uses `Instant startupTime` + `BlockDuration.currentBlockUnix()`).
-- **`SimulationClosePositionService`** — Closes on delta reversal with 1s confirmation delay (SL/TP).
-- **`SimulationOnResolveService`** — Settles positions on market resolution (UP/DOWN win). Emits RESOLVE, FEES and PNL events.
-- **`SimEventPersistenceService`** — Async MongoDB writes via `record(algo, marketGroup, slug, type, payload)`. Uses `mongoWriteExecutor`. Fire-and-forget — failures log warning and don't block the pipeline.
-
-### Database (MongoDB)
-
-**Collections:**
-
-| Collection | Description |
-|---|---|
-| `sim_events` | All simulation events (trades, resolves, PnL) |
-| `binance_stream_config` | Binance streams configuration |
-| `market_group` | Market group configuration |
-| `trading_config` | Trading parameters |
-
-**`sim_events` schema:**
-```json
-{
-  "_id": "ObjectId",
-  "slug": "btc-updown-5m-1711000200",
-  "marketGroup": "btc-updown-5m-",
-  "timestamp": 1711000100500,
-  "type": "BUY_ORDER_PLACED",
-  "algorithm": "ALPHA",
-  "payload": { ... }
-}
+  Polymarket WS → market resolution
+    → SimulationOnResolveService
+      → resolves B2B and H4 predictions (hitResolve)
+      → PredictionEventService (PREDICTION_BLOCK_RESOLVED, PREDICTION_HORIZON_RESOLVED)
 ```
 
-7 event types: `BUY_ORDER_PLACED`, `BUY_ORDER_RESPONSE`, `SELL_ORDER_PLACED`, `SELL_ORDER_RESPONSE`, `RESOLVE`, `FEES`, `PNL`.
+### Prediction Events (MongoDB)
+
+Written to BOTH `events` (Gabriel) and `sim_events` (Miguel) collections:
+
+| Event | When |
+|---|---|
+| `PREDICTION_M2M` | 1m candle closes, prediction created |
+| `PREDICTION_M2M_RESOLVED` | Next 1m candle closes, hit calculated |
+| `PREDICTION_BLOCK` | 5m candle closes, prediction created |
+| `PREDICTION_BLOCK_RESOLVED` | Polymarket OnResolve |
+| `PREDICTION_HORIZON` | First 1m candle of block, prediction created |
+| `PREDICTION_HORIZON_RESOLVED` | Polymarket OnResolve |
+
+### Database
+
+**PostgreSQL** — Candles + indicator features (JPA/Hibernate):
+- `candle_1_mn`, `candle_5_mn` — OHLCV data
+- `{mic,mom,trd,vlt,vol,tim}_indicator_{1,5}_mn` — Technical indicator features
+- `ddl-auto: update` — Hibernate creates/updates tables automatically
+- Composite primary key: `(symbol, open_time)` via `IndicatorKey` @IdClass
+
+**MongoDB** — Events + configuration:
+- `events` — Prediction events (Gabriel timeline, no algorithm field)
+- `sim_events` — Prediction events (Miguel timeline, algorithm=ALPHA)
+- `binance_stream_config`, `market_group` — Runtime configuration
 
 ### Dashboard (REST API)
 
-**Market Data:**
-- `GET /api/dashboard/markets?algorithm=ALPHA&marketGroup=btc-updown-5m-` — Market data with algorithm and group filter
-- `GET /api/dashboard/trading/config` — Current simulation config
-- `POST /api/dashboard/trading/config` — Update simulation parameters
+- `GET /api/dashboard/markets` — Markets with inferences (M2M dots + B2B + H4 banners)
+- `GET /api/dashboard/models` — Loaded XGBoost models
+- `GET /api/dashboard/streams` — Binance stream management
+- `GET /api/dashboard/markets/groups` — Market group management
 
-**Binance Streams:**
-- `GET /api/dashboard/streams` — List all streams with runtime status
-- `POST /api/dashboard/streams/add?symbol=X` — Add stream (inactive)
-- `POST /api/dashboard/streams/start?id=X` — Subscribe and activate
-- `POST /api/dashboard/streams/pause?id=X` — Unsubscribe and deactivate
-- `POST /api/dashboard/streams/remove?id=X` — Remove from database
+### Startup Sequence
 
-**Market Groups:**
-- `GET /api/dashboard/markets/groups` — List all groups with runtime status
-- `POST /api/dashboard/markets/groups/add?slugPrefix=X&displayName=Y&blockDuration=Z&binanceStream=W` — Add group
-- `POST /api/dashboard/markets/groups/start?id=X` — Activate group + trigger discovery
-- `POST /api/dashboard/markets/groups/pause?id=X` — Deactivate group
-- `POST /api/dashboard/markets/groups/remove?id=X` — Remove from database
-- `GET /api/dashboard/markets/durations` — List available BlockDuration values
-
-### Thread Model
-
-Single-thread executors for ordered event processing:
-- `bookTickUpdateListenerExecutor` — Binance book ticker events (entry point)
-- `polyOnPriceChangeExecutor` — Polymarket price change events (entry point)
-- `polyOnResolveExecutor` — Market resolution events (entry point)
-- `reconnectMarketDataSocketExecutor` / `reconnectPolyMarketExecutor` — WebSocket reconnects
-- `subMessageMarketDataSocketExecutor` — Binance subscription confirmations
-
-**Dynamic executors (per-symbol and per-group):**
-- `tick-{symbol}` (single-thread per symbol) — Created by `BinanceStreamConfigService`. Parallel between symbols, sequential within.
-- `mktgrp-{prefix}` (single-thread per market group) — Created by `MarketGroupService`. **Shared** between Binance ticks and Polymarket events for the same group, ensuring sequential processing.
-
-Pool executors:
-- `mongoWriteExecutor` (pool 1-2) — Async event persistence
-- `marketDiscoveryExecutor` (pool 4-8) — Parallel Gamma API calls for market discovery
-- `orderBookUpdateExecutor` (pool 1) — Local order book updates
-
-Thread-safe collections throughout: `ConcurrentHashMap` (markets, assets, blocks, executors), `ConcurrentLinkedDeque` (price history), `EnumMap` (algorithm registries), `CopyOnWriteArrayList` (entry history).
-
-### External Integrations
-
-- **Polymarket WebSocket** (`ws-subscriptions-clob.polymarket.com`) — Real-time market data (market channel only: price changes, order book, resolution)
-- **Gamma API** (`gamma-api.polymarket.com/markets`) — Market metadata by slug (hourly discovery per group)
-- **Binance Spot WebSocket** (`stream.binance.com:9443/ws`) — bookTicker streams (dynamic, configured via MongoDB)
-- **MongoDB** — Event persistence (`sim_events`), configuration (`binance_stream_config`, `market_group`, `trading_config`)
+1. `ModelRegistryService.loadModels()` — Validate + load .ubj Boosters
+2. `WarmupService.warmup("BTCUSDT", I1_MN)` — 2000 candles, indicators for last 1000
+3. `WarmupService.warmup("BTCUSDT", I5_MN)` — Same for 5m
+4. `SyncCheckService` — Integrity check (throws if desync, no deletes)
+5. Connect Polymarket + Binance WebSockets
+6. Subscribe `btcusdt@kline_1m` + `btcusdt@kline_5m`
+7. `setLive(true)` — Inference starts (only for real-time candles, not warmup)
 
 ## Key Dependencies
 
-- **OkHttp3** (`4.12.0`) — Polymarket WebSocket + async REST
-- **Java-WebSocket** (`1.6.0`) — Binance WebSocket client
-- **Jackson** — UTC timezone, ISO-8601 format, custom deserializers for Polymarket responses
-- **Lombok** — `@Data`, `@Builder`, `@Slf4j` throughout
-- **Spring Data MongoDB** — Repository pattern for event persistence
+- **XGBoost4J** (`3.1.1`) — ML model loading and inference (requires `libgomp1` in Docker)
+- **OkHttp3** (`4.12.0`) — Polymarket WebSocket + Binance REST (sync calls)
+- **ta4j** (`0.18`) — Technical analysis library (BarSeries, indicators)
+- **Spring Data JPA** — PostgreSQL persistence
+- **Spring Data MongoDB** — Event persistence
+- **Jackson** — JSON parsing
+- **Lombok** — `@Data`, `@Builder`, `@Slf4j`
 
 ## Configuration
 
-All secrets and endpoints are in `application.yaml` under `polymarket.*` and `binance.*`. Values with `0x` prefix (addresses, private keys) **must be quoted** in YAML to prevent hex number interpretation.
+`application.yaml`:
+- `spring.datasource.*` — PostgreSQL connection
+- `spring.jpa.hibernate.ddl-auto: update` — Auto-create tables
+- `spring.jpa.properties.hibernate.globally_quoted_identifiers: true` — Escapes reserved words (open, close)
+- `spring.mongodb.uri` — MongoDB connection
+- `polymarket.*` — Polymarket WebSocket + REST
+- `binance.*` — Binance WebSocket + REST
 
-Profile `local` (`application-local.yaml`) uses `mongodb://localhost:27017/yacamin-gabriel` for local development.
+## Docker
+
+```dockerfile
+FROM eclipse-temurin:21-jre
+RUN apt-get update && apt-get install -y libgomp1  # Required for XGBoost4J
+COPY models/ models/                                # XGBoost .ubj models
+```
+
+Important: `libgomp1` is required for XGBoost native library. Models must be in `/app/models/`.
