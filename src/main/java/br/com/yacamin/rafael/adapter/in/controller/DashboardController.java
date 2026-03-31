@@ -98,6 +98,7 @@ public class DashboardController {
                 inf.put("modelThreshold", p.getModelThreshold() != null ? round(p.getModelThreshold(), 2) : null);
                 inf.put("closeMid", p.getCloseMid() != null ? round(p.getCloseMid(), 2) : null);
                 inf.put("hit", p.getHit());
+                inf.put("valid", p.getValid());
                 inferenceList.add(inf);
 
                 if (p.getMinuteInBlock() == 1) {

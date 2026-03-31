@@ -1635,6 +1635,14 @@
 
                     // openMid = close do candle gerador → dá continuidade visual
                     // closeMid_pred_N == openMid_pred_N+1
+                    // Badge VALID/INVALID
+                    let validBadge = '';
+                    if (inf.valid === true) {
+                        validBadge = '<span style="font-size:7px;font-weight:800;color:var(--green);background:rgba(34,197,94,0.15);padding:0px 4px;border-radius:3px">VALID</span>';
+                    } else if (inf.valid === false) {
+                        validBadge = '<span style="font-size:7px;font-weight:800;color:var(--red);background:rgba(239,68,68,0.15);padding:0px 4px;border-radius:3px">INVALID</span>';
+                    }
+
                     const startPrice = inf.openMid;
                     const startStr = startPrice != null ? startPrice.toFixed(2) : '—';
                     let closeHtml;
@@ -1649,6 +1657,7 @@
                         ${hitIcon}
                         <div class="dot-circle ${cls}">${arrow}</div>
                         <span class="dot-conf">${conf}%</span>
+                        ${validBadge}
                         <div class="dot-prices">
                             <span class="dot-open">${startStr}</span>
                             <span style="color:var(--text-dim);font-size:7px">\u2193</span>
