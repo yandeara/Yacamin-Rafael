@@ -40,6 +40,7 @@ public class PredictionEventService {
         payload.put("modelKey", pred.getModelKey());
         payload.put("openMid", pred.getOpenMid());
         payload.put("modelThreshold", pred.getModelThreshold());
+        payload.put("valid", pred.getValid());
 
         persist(slug, marketGroup, type, payload);
     }
@@ -59,6 +60,7 @@ public class PredictionEventService {
         payload.put("openMid", pred.getOpenMid());
         payload.put("closeMid", pred.getCloseMid());
         payload.put("hit", pred.getHit());
+        payload.put("valid", pred.getValid());
 
         persist(slug, marketGroup, "PREDICTION_M2M_RESOLVED", payload);
     }

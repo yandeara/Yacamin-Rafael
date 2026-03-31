@@ -149,6 +149,11 @@ public class MinuteByMinuteInferenceService {
                     direction, confidence, minuteInBlock, openTime, descriptor.key(), candleClose);
             prediction.setModelThreshold(modelThreshold);
 
+            // VALID/INVALID: o candleClose é o preço no momento da previsão.
+            // UP válido se preço atual < threshold (espaço pra subir)
+            // DOWN válido se preço atual > threshold (espaço pra cair)
+            prediction.validateWithMarketOpen(candleClose);
+
             blockInferenceMemory.addPrediction(blockUnix, prediction);
 
             // Gravar evento PREDICTION_M2M
@@ -158,9 +163,10 @@ public class MinuteByMinuteInferenceService {
             predictionEventService.recordPrediction(slug, mktGroup, "PREDICTION_M2M", prediction);
 
             long elapsed = System.currentTimeMillis() - t0;
-            log.info("[M2M] {} block={} min={} -> {} ({}) threshold={} argmax={} probs={} [{}ms]",
+            log.info("[M2M] {} block={} min={} -> {} ({}) threshold={} marketOpen(=openMid)={} valid={} argmax={} probs={} [{}ms]",
                     candle.getSymbol(), blockUnix, minuteInBlock, direction, confidence,
-                    modelThreshold, argmax, probsStr, elapsed);
+                    modelThreshold, candleClose, prediction.getValid(),
+                    argmax, probsStr, elapsed);
 
         } catch (Exception e) {
             log.error("[M2M] Inference failed for {} @ {}: {}",
@@ -188,9 +194,11 @@ public class MinuteByMinuteInferenceService {
 
         lastPred.resolve(currentCandleClose);
 
-        log.info("[M2M] Resolved block={} min={}: {} openMid={} closeMid={} -> {}",
+        log.info("[M2M] Resolved block={} min={}: {} threshold={} openMid={} closeMid={} -> {} (valid={})",
                 prevBlockUnix, lastPred.getMinuteInBlock(), lastPred.getDirection(),
-                lastPred.getOpenMid(), currentCandleClose, lastPred.getHit() ? "HIT" : "MISS");
+                lastPred.getModelThreshold(), lastPred.getOpenMid(), currentCandleClose,
+                lastPred.getHit() ? "HIT" : "MISS",
+                lastPred.getValid() != null ? (lastPred.getValid() ? "VALID" : "INVALID") : "N/A");
 
         // Gravar evento PREDICTION_M2M_RESOLVED
         Market market = simulationMarketMemoryService.findMarketByUnixTime(ALGO, prevBlockUnix);
