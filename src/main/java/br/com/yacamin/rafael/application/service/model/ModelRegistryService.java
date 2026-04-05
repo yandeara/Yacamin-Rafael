@@ -1,8 +1,10 @@
 package br.com.yacamin.rafael.application.service.model;
 
-import br.com.yacamin.rafael.domain.CandleIntervals;
-import br.com.yacamin.rafael.domain.ModelDescriptor;
-import lombok.Getter;
+import br.com.yacamin.rafael.adapter.out.persistence.mikhael.ModelRegistryMongoRepository;
+import br.com.yacamin.rafael.domain.enumeration.PredictionType;
+import br.com.yacamin.rafael.domain.model.SavedModel;
+import br.com.yacamin.rafael.domain.mongo.document.ModelRegistryDocument;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ml.dmlc.xgboost4j.java.Booster;
 import ml.dmlc.xgboost4j.java.XGBoost;
@@ -10,176 +12,268 @@ import ml.dmlc.xgboost4j.java.XGBoostError;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
- * Carrega e valida todos os modelos .ubj da pasta models/ no startup.
- * Padrão: {tipo}_{moeda}_{horizon}_{intervalo}_{MMYYYY-MMYYYY}.ubj
- * Exemplo: xgb_BTCUSDT_h1_1m_012026-022026.ubj
+ * Carrega modelos .ubj seguindo o padrao do Mikhael:
+ *   models/saved/{PRED_TYPE}/{PRED}_xgb_{SYMBOL}_{INTERVAL}_{MMYYYY-MMYYYY}.ubj
+ * Exemplo: models/saved/horizon/HORIZON_xgb_BTCUSDT_1m_032024-032026.ubj
  *
- * Se qualquer arquivo .ubj estiver fora do padrão, lança IllegalStateException
- * e impede o startup da aplicação.
+ * Sincroniza com MongoDB (yacamin-mikhael, collection model_registry)
+ * e carrega Boosters em memoria para inferencia live.
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ModelRegistryService {
 
-    private static final Path MODELS_DIR = Paths.get("models");
+    private static final Path MODELS_ROOT = Paths.get("models", "saved");
 
-    /**
-     * Regex para o padrão oficial:
-     * grupo1=tipo, grupo2=moeda, grupo3=horizon, grupo4=intervalo, grupo5=MMYYYY inicio, grupo6=MMYYYY fim
-     */
-    private static final Pattern NAME_PATTERN = Pattern.compile(
-            "^([a-zA-Z]+)_([A-Z0-9]+)_(h\\d+)_(\\d+[mh])_(\\d{6})-(\\d{6})\\.ubj$",
-            Pattern.CASE_INSENSITIVE
+    // HORIZON_xgb_BTCUSDT_1m_012026-022026.ubj
+    private static final Pattern MODEL_PATTERN = Pattern.compile(
+            "^(?<pred>[A-Z0-9]+)_(?<algo>[a-zA-Z]+)_(?<symbol>[A-Z0-9]+)_(?<tf>[0-9]+[a-z]+)_(?<rangeStart>\\d+)-(?<rangeEnd>\\d+)\\.ubj$"
     );
 
-    private static final Set<String> VALID_INTERVALS = Set.of("1m", "5m", "15m", "1h");
+    private final ModelRegistryMongoRepository registryRepository;
+    private final FeatureMaskService featureMaskService;
 
-    @Getter
-    private final Map<String, ModelDescriptor> models = new LinkedHashMap<>();
+    private volatile List<SavedModel> models = List.of();
+    private volatile Map<String, ModelRegistryDocument> registryByFileName = Map.of();
     private final Map<String, Booster> boosterCache = new ConcurrentHashMap<>();
 
     public void loadModels() {
         log.info("========== MODEL REGISTRY START ==========");
 
-        if (!Files.isDirectory(MODELS_DIR)) {
-            log.warn("[MODEL] Directory '{}' not found — no models to load", MODELS_DIR.toAbsolutePath());
-            log.info("========== MODEL REGISTRY END ==========");
-            return;
+        // 1) Escanear arquivos .ubj
+        List<SavedModel> foundFiles = scanModelFiles();
+        models = Collections.unmodifiableList(foundFiles);
+        log.info("[MODEL] {} arquivo(s) .ubj encontrado(s)", models.size());
+
+        // 2) Sincronizar com MongoDB
+        syncWithMongo(foundFiles);
+
+        // 3) Carregar registros do MongoDB
+        Map<String, ModelRegistryDocument> regMap = new HashMap<>();
+        for (ModelRegistryDocument doc : registryRepository.findAll()) {
+            regMap.put(doc.getFileName(), doc);
         }
+        registryByFileName = Collections.unmodifiableMap(regMap);
+        log.info("[MODEL] {} registro(s) no MongoDB", registryByFileName.size());
 
-        List<Path> ubjFiles;
-        try (Stream<Path> stream = Files.list(MODELS_DIR)) {
-            ubjFiles = stream
-                    .filter(p -> p.getFileName().toString().endsWith(".ubj"))
-                    .sorted()
-                    .toList();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read models directory: " + MODELS_DIR.toAbsolutePath(), e);
-        }
+        // 4) Carregar Boosters em memoria (Rafael-specific)
+        for (SavedModel model : models) {
+            Path modelPath = MODELS_ROOT
+                    .resolve(model.predictionType().name().toLowerCase())
+                    .resolve(model.fileName());
 
-        if (ubjFiles.isEmpty()) {
-            log.info("[MODEL] No .ubj files found in '{}'", MODELS_DIR.toAbsolutePath());
-            log.info("========== MODEL REGISTRY END ==========");
-            return;
-        }
-
-        log.info("[MODEL] Found {} .ubj file(s) in '{}'", ubjFiles.size(), MODELS_DIR.toAbsolutePath());
-
-        for (Path file : ubjFiles) {
-            String fileName = file.getFileName().toString();
-            ModelDescriptor descriptor = parseFileName(fileName, file.toAbsolutePath());
-            models.put(descriptor.key(), descriptor);
-
-            // Carregar Booster em memória
             try {
-                Booster booster = XGBoost.loadModel(file.toAbsolutePath().toString());
-                boosterCache.put(descriptor.key(), booster);
-                log.info("[MODEL] Loaded: {} -> type={}, symbol={}, horizon={}, interval={}, train={}-{}",
-                        fileName, descriptor.type(), descriptor.symbol(), descriptor.horizon(),
-                        descriptor.interval().getValue(), descriptor.trainStart(), descriptor.trainEnd());
+                Booster booster = XGBoost.loadModel(modelPath.toAbsolutePath().toString());
+                boosterCache.put(model.fileName(), booster);
+                log.info("[MODEL] Booster loaded: {} (pred={}, symbol={}, h{}, {})",
+                        model.fileName(), model.predictionType(), model.symbol(),
+                        model.horizon(), model.timeframe());
             } catch (XGBoostError e) {
                 throw new IllegalStateException(
-                        "Failed to load XGBoost model '" + fileName + "': " + e.getMessage(), e);
+                        "Failed to load XGBoost model '" + model.fileName() + "': " + e.getMessage(), e);
             }
         }
 
-        log.info("[MODEL] {} model(s) loaded into memory", models.size());
+        log.info("[MODEL] {} modelo(s) carregados em memoria", boosterCache.size());
         log.info("========== MODEL REGISTRY END ==========");
     }
 
-    public List<ModelDescriptor> getAll() {
-        return List.copyOf(models.values());
+    // ── Queries ──
+
+    public List<SavedModel> getAll() {
+        return models;
     }
 
-    public Optional<ModelDescriptor> getByKey(String key) {
-        return Optional.ofNullable(models.get(key));
-    }
-
-    public List<ModelDescriptor> getBySymbol(String symbol) {
-        return models.values().stream()
-                .filter(m -> m.symbol().equalsIgnoreCase(symbol))
+    public List<SavedModel> getByPredictionType(PredictionType predictionType) {
+        return models.stream()
+                .filter(m -> m.predictionType() == predictionType)
                 .toList();
     }
 
-    public Booster getBooster(String key) {
-        Booster b = boosterCache.get(key);
+    public Optional<ModelRegistryDocument> getRegistry(String fileName) {
+        return Optional.ofNullable(registryByFileName.get(fileName));
+    }
+
+    public Optional<List<String>> getFeatureNames(String fileName) {
+        return getRegistry(fileName).map(ModelRegistryDocument::getFeatureNames);
+    }
+
+    public Booster getBooster(String fileName) {
+        Booster b = boosterCache.get(fileName);
         if (b == null) {
-            throw new IllegalStateException("No Booster loaded for key: " + key);
+            throw new IllegalStateException("No Booster loaded for: " + fileName);
         }
         return b;
     }
 
-    public List<ModelDescriptor> getByInterval(CandleIntervals interval) {
-        return models.values().stream()
-                .filter(m -> m.interval() == interval)
-                .toList();
+    /**
+     * Retorna o modelo ativo para o PredictionType dado.
+     * Busca pelo campo 'active=true' no registry. Se nenhum estiver marcado,
+     * cai no fallback do primeiro encontrado.
+     */
+    public Optional<SavedModel> findFirst(PredictionType predictionType) {
+        // Buscar modelo marcado como ativo no registry
+        for (SavedModel m : models) {
+            if (m.predictionType() != predictionType) continue;
+            ModelRegistryDocument reg = registryByFileName.get(m.fileName());
+            if (reg != null && reg.isActive()) {
+                return Optional.of(m);
+            }
+        }
+        // Fallback: primeiro disponível
+        return models.stream()
+                .filter(m -> m.predictionType() == predictionType)
+                .findFirst();
     }
 
-    private ModelDescriptor parseFileName(String fileName, Path absolutePath) {
-        Matcher matcher = NAME_PATTERN.matcher(fileName);
-
-        if (!matcher.matches()) {
-            throw new IllegalStateException(
-                    "Model file '" + fileName + "' does not match the required naming pattern. " +
-                    "Expected: {tipo}_{moeda}_{horizon}_{intervalo}_{MMYYYY-MMYYYY}.ubj " +
-                    "(ex: xgb_BTCUSDT_h1_1m_012026-022026.ubj). " +
-                    "Fix the file name or remove it from the models/ directory.");
+    /**
+     * Ativa um modelo para seu predictionType, desativando os demais do mesmo tipo.
+     */
+    public void activateModel(String fileName) {
+        ModelRegistryDocument target = registryByFileName.get(fileName);
+        if (target == null) {
+            throw new IllegalArgumentException("Model not found in registry: " + fileName);
         }
 
-        String type = matcher.group(1).toLowerCase();
-        String symbol = matcher.group(2).toUpperCase();
-        String horizon = matcher.group(3).toLowerCase();
-        String intervalStr = matcher.group(4).toLowerCase();
-        String trainStartStr = matcher.group(5);
-        String trainEndStr = matcher.group(6);
+        String predType = target.getPredictionType();
 
-        // Validar intervalo
-        if (!VALID_INTERVALS.contains(intervalStr)) {
-            throw new IllegalStateException(
-                    "Model file '" + fileName + "' has invalid interval '" + intervalStr + "'. " +
-                    "Valid intervals: " + VALID_INTERVALS);
+        // Desativar todos do mesmo predictionType
+        for (ModelRegistryDocument doc : registryByFileName.values()) {
+            if (predType.equals(doc.getPredictionType()) && doc.isActive()) {
+                doc.setActive(false);
+                registryRepository.save(doc);
+            }
         }
 
-        CandleIntervals interval = CandleIntervals.valueOfLabel(intervalStr);
+        // Ativar o selecionado
+        target.setActive(true);
+        registryRepository.save(target);
 
-        // Parsear treinamento MMYYYY
-        YearMonth trainStart = parseYearMonth(trainStartStr, fileName);
-        YearMonth trainEnd = parseYearMonth(trainEndStr, fileName);
+        // Atualizar cache local
+        Map<String, ModelRegistryDocument> updated = new HashMap<>(registryByFileName);
+        registryByFileName = Collections.unmodifiableMap(updated);
 
-        if (trainEnd.isBefore(trainStart)) {
-            throw new IllegalStateException(
-                    "Model file '" + fileName + "' has trainEnd (" + trainEnd +
-                    ") before trainStart (" + trainStart + ").");
-        }
-
-        return new ModelDescriptor(type, symbol, horizon, interval, trainStart, trainEnd, fileName, absolutePath);
+        log.info("[MODEL] Modelo ativado: {} ({})", fileName, predType);
     }
 
-    private YearMonth parseYearMonth(String mmyyyy, String fileName) {
-        if (mmyyyy.length() != 6) {
-            throw new IllegalStateException(
-                    "Model file '" + fileName + "' has invalid training date '" + mmyyyy +
-                    "'. Expected format: MMYYYY (ex: 012026).");
+    // ── Scan ──
+
+    private List<SavedModel> scanModelFiles() {
+        List<SavedModel> found = new ArrayList<>();
+
+        if (!Files.isDirectory(MODELS_ROOT)) {
+            log.warn("[MODEL] Pasta de modelos nao encontrada: {}", MODELS_ROOT.toAbsolutePath());
+            return found;
         }
+
+        try (DirectoryStream<Path> typeStream = Files.newDirectoryStream(MODELS_ROOT)) {
+            for (Path typeDir : typeStream) {
+                if (!Files.isDirectory(typeDir)) continue;
+
+                try (DirectoryStream<Path> modelStream = Files.newDirectoryStream(typeDir, "*.ubj")) {
+                    for (Path modelFile : modelStream) {
+                        SavedModel parsed = parseFileName(modelFile);
+                        if (parsed != null) {
+                            found.add(parsed);
+                        } else {
+                            log.warn("[MODEL] Nome de arquivo nao reconhecido: {}", modelFile.getFileName());
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error("[MODEL] Erro ao escanear pasta de modelos", e);
+        }
+
+        return found;
+    }
+
+    // ── Sync MongoDB ──
+
+    private void syncWithMongo(List<SavedModel> foundFiles) {
+        for (SavedModel model : foundFiles) {
+            Optional<ModelRegistryDocument> existing = registryRepository.findByFileName(model.fileName());
+
+            if (existing.isPresent()) {
+                log.info("[MODEL] Registro ja existe no MongoDB: {}", model.fileName());
+                continue;
+            }
+
+            ModelRegistryDocument doc = new ModelRegistryDocument();
+            doc.setFileName(model.fileName());
+            doc.setPredictionType(model.predictionType().name());
+            doc.setType(model.type());
+            doc.setAlgorithm(model.algorithm());
+            doc.setSymbol(model.symbol());
+            doc.setHorizon(model.horizon());
+            doc.setTimeframe(model.timeframe());
+            doc.setRangeStart(model.rangeStart());
+            doc.setRangeEnd(model.rangeEnd());
+            doc.setFeatureNames(featureMaskService.getProdMask());
+
+            registryRepository.save(doc);
+            log.info("[MODEL] Registro criado no MongoDB: {} ({} features)", model.fileName(), doc.getFeatureNames().size());
+        }
+    }
+
+    // ── Parse ──
+
+    private SavedModel parseFileName(Path file) {
+        String name = file.getFileName().toString();
+        Matcher m = MODEL_PATTERN.matcher(name);
+        if (!m.matches()) return null;
+
+        PredictionType predType;
         try {
-            int month = Integer.parseInt(mmyyyy.substring(0, 2));
-            int year = Integer.parseInt(mmyyyy.substring(2, 6));
-            return YearMonth.of(year, month);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Model file '" + fileName + "' has invalid training date '" + mmyyyy +
-                    "'. Expected format: MMYYYY (ex: 012026). Error: " + e.getMessage());
+            predType = PredictionType.valueOf(m.group("pred"));
+        } catch (IllegalArgumentException e) {
+            log.warn("[MODEL] PredictionType desconhecido '{}' no arquivo: {}", m.group("pred"), name);
+            return null;
         }
+
+        long size;
+        try {
+            size = Files.size(file);
+        } catch (IOException e) {
+            size = -1;
+        }
+
+        int horizon = switch (predType) {
+            case HORIZON -> 4;
+            case M2M -> 1;
+            case BLOCK -> 1;
+            case C2C -> 1;
+        };
+
+        return new SavedModel(
+                name,
+                predType,
+                predType.name().toLowerCase(),
+                m.group("algo"),
+                m.group("symbol"),
+                horizon,
+                m.group("tf"),
+                formatRange(m.group("rangeStart")),
+                formatRange(m.group("rangeEnd")),
+                size
+        );
+    }
+
+    private String formatRange(String raw) {
+        if (raw.length() == 6) {
+            return raw.substring(0, 2) + "/" + raw.substring(2);
+        }
+        return raw;
     }
 }

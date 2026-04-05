@@ -11,25 +11,11 @@ management:
 spring:
   application:
     name: Yacamin-Rafael
-  datasource:
-    url: jdbc:postgresql://92.112.181.193:5432/rafael
-    username: postgres
-    password: r0uuICVJhyld0puMfTf3F7z3q9qrAmUCIz16s39PvC59RvvMNRkN1C7bVtVT27gx
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    open-in-view: false
-    show-sql: false
-    properties:
-      hibernate:
-        globally_quoted_identifiers: true
-        jdbc:
-          batch_size: 50
-        order_inserts: true
-        order_updates: true
   mongodb:
     uri: "${MONGODB_URI:mongodb://root:T%23fu1964@77.37.54.142:5432/yacamin-gabriel?authSource=admin&directConnection=true}"
+mongodb:
+  mikhael:
+    uri: "${MONGODB_MIKHAEL_URI:mongodb://root:T%23fu1964@77.37.54.142:5432/yacamin-mikhael?authSource=admin&directConnection=true}"
 polymarket:
   wallet-address: "0xBfEB032385e38b733150aacc91F5161815d65df0"
   private-key: "0xe458802085a329c2011118d222b5b82b0e457df6623d7d777ec2c20a2e523b75"

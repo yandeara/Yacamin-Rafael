@@ -1,12 +1,10 @@
 package br.com.yacamin.rafael.domain;
 
 import br.com.yacamin.rafael.adapter.out.websocket.binance.dto.response.KlineEventDataResponse;
-import br.com.yacamin.rafael.domain.scylla.entity.Candle1Mn;
-import br.com.yacamin.rafael.domain.scylla.entity.Candle5Mn;
+import br.com.yacamin.rafael.domain.mongo.document.CandleDocument;
 import lombok.Data;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,26 +29,6 @@ public class SymbolCandle {
     private double takerSellBaseVolume;
     private double takerSellQuoteVolume;
 
-    public static SymbolCandle fromCandle1Mn(Candle1Mn entity) {
-        SymbolCandle c = new SymbolCandle();
-        c.setSymbol(entity.getSymbol());
-        c.setOpenTime(entity.getOpenTime());
-        c.setCloseTime(entity.getOpenTime().plus(1, ChronoUnit.MINUTES));
-        c.setInterval(CandleIntervals.I1_MN);
-        c.setOpen(entity.getOpen());
-        c.setHigh(entity.getHigh());
-        c.setLow(entity.getLow());
-        c.setClose(entity.getClose());
-        c.setVolume(entity.getVolume());
-        c.setQuoteVolume(entity.getQuoteVolume());
-        c.setNumberOfTrades(entity.getNumberOfTrades());
-        c.setTakerBuyBaseVolume(entity.getTakerBuyBaseVolume());
-        c.setTakerBuyQuoteVolume(entity.getTakerBuyQuoteVolume());
-        c.setTakerSellBaseVolume(entity.getTakerSellBaseVolume());
-        c.setTakerSellQuoteVolume(entity.getTakerSellQuoteVolume());
-        return c;
-    }
-
     public static SymbolCandle fromKlineData(KlineEventDataResponse data) {
         SymbolCandle c = new SymbolCandle();
         c.setSymbol(data.symbol());
@@ -71,60 +49,42 @@ public class SymbolCandle {
         return c;
     }
 
-    public Candle1Mn toCandle1Mn() {
-        Candle1Mn e = new Candle1Mn();
-        e.setSymbol(symbol);
-        e.setOpenTime(openTime);
-        e.setOpen(open);
-        e.setHigh(high);
-        e.setLow(low);
-        e.setClose(close);
-        e.setVolume(volume);
-        e.setQuoteVolume(quoteVolume);
-        e.setNumberOfTrades(numberOfTrades);
-        e.setTakerBuyBaseVolume(takerBuyBaseVolume);
-        e.setTakerBuyQuoteVolume(takerBuyQuoteVolume);
-        e.setTakerSellBaseVolume(takerSellBaseVolume);
-        e.setTakerSellQuoteVolume(takerSellQuoteVolume);
-        return e;
-    }
-
-    public static SymbolCandle fromCandle5Mn(Candle5Mn entity) {
+    public static SymbolCandle fromCandleDocument(CandleDocument doc, CandleIntervals interval) {
         SymbolCandle c = new SymbolCandle();
-        c.setSymbol(entity.getSymbol());
-        c.setOpenTime(entity.getOpenTime());
-        c.setCloseTime(entity.getOpenTime().plus(5, ChronoUnit.MINUTES));
-        c.setInterval(CandleIntervals.I5_MN);
-        c.setOpen(entity.getOpen());
-        c.setHigh(entity.getHigh());
-        c.setLow(entity.getLow());
-        c.setClose(entity.getClose());
-        c.setVolume(entity.getVolume());
-        c.setQuoteVolume(entity.getQuoteVolume());
-        c.setNumberOfTrades(entity.getNumberOfTrades());
-        c.setTakerBuyBaseVolume(entity.getTakerBuyBaseVolume());
-        c.setTakerBuyQuoteVolume(entity.getTakerBuyQuoteVolume());
-        c.setTakerSellBaseVolume(entity.getTakerSellBaseVolume());
-        c.setTakerSellQuoteVolume(entity.getTakerSellQuoteVolume());
+        c.setSymbol(doc.getSymbol());
+        c.setOpenTime(doc.getOpenTime());
+        c.setCloseTime(doc.getOpenTime().plus(interval.getDuration()));
+        c.setInterval(interval);
+        c.setOpen(doc.getOpen());
+        c.setHigh(doc.getHigh());
+        c.setLow(doc.getLow());
+        c.setClose(doc.getClose());
+        c.setVolume(doc.getVolume());
+        c.setQuoteVolume(doc.getQuoteVolume());
+        c.setNumberOfTrades(doc.getNumberOfTrades());
+        c.setTakerBuyBaseVolume(doc.getTakerBuyBaseVolume());
+        c.setTakerBuyQuoteVolume(doc.getTakerBuyQuoteVolume());
+        c.setTakerSellBaseVolume(doc.getTakerSellBaseVolume());
+        c.setTakerSellQuoteVolume(doc.getTakerSellQuoteVolume());
         return c;
     }
 
-    public Candle5Mn toCandle5Mn() {
-        Candle5Mn e = new Candle5Mn();
-        e.setSymbol(symbol);
-        e.setOpenTime(openTime);
-        e.setOpen(open);
-        e.setHigh(high);
-        e.setLow(low);
-        e.setClose(close);
-        e.setVolume(volume);
-        e.setQuoteVolume(quoteVolume);
-        e.setNumberOfTrades(numberOfTrades);
-        e.setTakerBuyBaseVolume(takerBuyBaseVolume);
-        e.setTakerBuyQuoteVolume(takerBuyQuoteVolume);
-        e.setTakerSellBaseVolume(takerSellBaseVolume);
-        e.setTakerSellQuoteVolume(takerSellQuoteVolume);
-        return e;
+    public CandleDocument toCandleDocument() {
+        CandleDocument doc = new CandleDocument();
+        doc.setSymbol(symbol);
+        doc.setOpenTime(openTime);
+        doc.setOpen(open);
+        doc.setHigh(high);
+        doc.setLow(low);
+        doc.setClose(close);
+        doc.setVolume(volume);
+        doc.setQuoteVolume(quoteVolume);
+        doc.setNumberOfTrades(numberOfTrades);
+        doc.setTakerBuyBaseVolume(takerBuyBaseVolume);
+        doc.setTakerBuyQuoteVolume(takerBuyQuoteVolume);
+        doc.setTakerSellBaseVolume(takerSellBaseVolume);
+        doc.setTakerSellQuoteVolume(takerSellQuoteVolume);
+        return doc;
     }
 
     public static List<SymbolCandle> parseCandles(String symbol, CandleIntervals interval, List<List<Object>> rows) {

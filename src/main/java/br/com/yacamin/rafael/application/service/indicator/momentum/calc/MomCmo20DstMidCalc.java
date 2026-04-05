@@ -1,0 +1,28 @@
+package br.com.yacamin.rafael.application.service.indicator.momentum.calc;
+
+import br.com.yacamin.rafael.application.service.indicator.DescribableCalc;
+import br.com.yacamin.rafael.application.service.indicator.FeatureDescription;
+
+import org.springframework.stereotype.Component;
+import org.ta4j.core.indicators.CMOIndicator;
+
+@Component
+public class MomCmo20DstMidCalc implements DescribableCalc {
+
+    public static double calculate(CMOIndicator cmo, int index) {
+        return Math.abs(cmo.getValue(index).doubleValue());
+    }
+
+    @Override
+    public FeatureDescription describe() {
+        return new FeatureDescription(
+                "mom_cmo_20_dst_mid",
+                "CMO(20) Distance from 0",
+                "momentum",
+                "|CMO(20)|",
+                "Distancia absoluta do CMO(20) em relacao ao ponto neutro 0. Quanto maior, mais extremo o momentum.",
+                "0 a 100",
+                "CMO(20) = -60 -> dst_mid = 60.0"
+        );
+    }
+}

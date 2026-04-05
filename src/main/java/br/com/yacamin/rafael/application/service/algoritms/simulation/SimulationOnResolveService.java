@@ -69,14 +69,6 @@ public class SimulationOnResolveService {
         // Notificar predictions sobre a resolução do mercado
         long blockUnix = market.getUnixTime();
 
-        InferencePrediction b2b = blockInferenceMemory.getBlockPrediction(blockUnix);
-        if (b2b != null && b2b.getHitResolve() == null) {
-            b2b.resolveMarket(outcome);
-            log.info("[{}] B2B resolve: block={}, direction={}, outcome={}, hitResolve={}",
-                    algo, blockUnix, b2b.getDirection(), outcome, b2b.getHitResolve());
-            predictionEventService.recordBlockResolved(market.getSlug(), market.getMarketGroup(), b2b);
-        }
-
         InferencePrediction h4 = blockInferenceMemory.getHorizonPrediction(blockUnix);
         if (h4 != null && h4.getHitResolve() == null) {
             h4.resolveMarket(outcome);

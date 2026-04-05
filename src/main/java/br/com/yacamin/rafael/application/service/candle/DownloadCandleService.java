@@ -1,9 +1,9 @@
 package br.com.yacamin.rafael.application.service.candle;
 
-import br.com.yacamin.rafael.adapter.out.persistence.Candle1MnRepository;
-import br.com.yacamin.rafael.adapter.out.persistence.Candle5MnRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.mikhael.CandleMongoRepository;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 import br.com.yacamin.rafael.domain.SymbolCandle;
+import br.com.yacamin.rafael.domain.mongo.document.CandleDocument;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +19,7 @@ import java.util.List;
 @Service
 public class DownloadCandleService {
 
-    private final Candle1MnRepository candle1MnRepository;
-    private final Candle5MnRepository candle5MnRepository;
+    private final CandleMongoRepository candleMongoRepository;
     private final ObjectMapper objectMapper;
     private final OkHttpClient okHttpClient;
 
@@ -30,12 +29,10 @@ public class DownloadCandleService {
     @Value("${binance.endpoints.spot.klines}")
     private String binanceKlinesEndpoint;
 
-    public DownloadCandleService(Candle1MnRepository candle1MnRepository,
-                                  Candle5MnRepository candle5MnRepository,
+    public DownloadCandleService(CandleMongoRepository candleMongoRepository,
                                   ObjectMapper objectMapper,
                                   OkHttpClient okHttpClient) {
-        this.candle1MnRepository = candle1MnRepository;
-        this.candle5MnRepository = candle5MnRepository;
+        this.candleMongoRepository = candleMongoRepository;
         this.objectMapper = objectMapper;
         this.okHttpClient = okHttpClient;
     }
@@ -92,8 +89,6 @@ public class DownloadCandleService {
         }
     }
 
-    private static final int BATCH_SIZE = 50;
-
     private void persist(List<SymbolCandle> candles, CandleIntervals interval) {
         var filtered = candles.stream()
                 .filter(c -> c.getNumberOfTrades() > 0)
@@ -103,37 +98,12 @@ public class DownloadCandleService {
 
         long t0 = System.currentTimeMillis();
 
-        switch (interval) {
-            case I1_MN -> {
-                var entities = filtered.stream().map(SymbolCandle::toCandle1Mn).toList();
-                log.info("[DOWNLOAD] Saving {} candle_1_mn entities...", entities.size());
-                for (int i = 0; i < entities.size(); i += BATCH_SIZE) {
-                    int end = Math.min(i + BATCH_SIZE, entities.size());
-                    try {
-                        candle1MnRepository.saveAll(entities.subList(i, end));
-                        log.debug("[DOWNLOAD] Batch {}-{} saved", i, end);
-                    } catch (Exception e) {
-                        log.error("[DOWNLOAD] Batch {}-{} FAILED: {}", i, end, e.getMessage(), e);
-                        throw e;
-                    }
-                }
-            }
-            case I5_MN -> {
-                var entities = filtered.stream().map(SymbolCandle::toCandle5Mn).toList();
-                log.info("[DOWNLOAD] Saving {} candle_5_mn entities...", entities.size());
-                for (int i = 0; i < entities.size(); i += BATCH_SIZE) {
-                    int end = Math.min(i + BATCH_SIZE, entities.size());
-                    try {
-                        candle5MnRepository.saveAll(entities.subList(i, end));
-                        log.debug("[DOWNLOAD] Batch {}-{} saved", i, end);
-                    } catch (Exception e) {
-                        log.error("[DOWNLOAD] Batch {}-{} FAILED: {}", i, end, e.getMessage(), e);
-                        throw e;
-                    }
-                }
-            }
-            default -> { return; }
-        }
+        List<CandleDocument> documents = filtered.stream()
+                .map(SymbolCandle::toCandleDocument)
+                .toList();
+
+        log.info("[DOWNLOAD] Saving {} candle documents to {}...", documents.size(), CandleMongoRepository.collectionName(interval));
+        candleMongoRepository.saveAll(documents, interval);
 
         log.info("[DOWNLOAD] Persisted {} candles [{}] in {}ms", filtered.size(), interval, System.currentTimeMillis() - t0);
     }

@@ -1,7 +1,7 @@
 package br.com.yacamin.rafael.application.service.model;
 
-import br.com.yacamin.rafael.adapter.out.persistence.RealEventRepository;
-import br.com.yacamin.rafael.adapter.out.persistence.SimEventRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.gabriel.RealEventRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.gabriel.SimEventRepository;
 import br.com.yacamin.rafael.domain.InferencePrediction;
 import br.com.yacamin.rafael.domain.RealEvent;
 import br.com.yacamin.rafael.domain.SimEvent;
@@ -63,28 +63,6 @@ public class PredictionEventService {
         payload.put("valid", pred.getValid());
 
         persist(slug, marketGroup, "PREDICTION_M2M_RESOLVED", payload);
-    }
-
-    // ── BLOCK RESOLVED (quando OnResolve da Polymarket chega) ──
-
-    @Async("mongoWriteExecutor")
-    public void recordBlockResolved(String slug, String marketGroup, InferencePrediction pred) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("marketGroup", marketGroup);
-        payload.put("predictionType", "PREDICTION_BLOCK");
-        payload.put("direction", pred.getDirection());
-        payload.put("confidence", pred.getConfidence());
-        payload.put("modelKey", pred.getModelKey());
-        payload.put("modelThreshold", pred.getModelThreshold());
-        payload.put("openMid", pred.getOpenMid());
-        payload.put("closeMid", pred.getCloseMid());
-        payload.put("marketOpen", pred.getMarketOpen());
-        payload.put("hitCandle", pred.getHit());
-        payload.put("valid", pred.getValid());
-        payload.put("resolvedOutcome", pred.getResolvedOutcome());
-        payload.put("hitResolve", pred.getHitResolve());
-
-        persist(slug, marketGroup, "PREDICTION_BLOCK_RESOLVED", payload);
     }
 
     // ── HORIZON RESOLVED (quando OnResolve da Polymarket chega) ──

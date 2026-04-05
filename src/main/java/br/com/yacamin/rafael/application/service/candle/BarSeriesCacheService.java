@@ -1,11 +1,10 @@
 package br.com.yacamin.rafael.application.service.candle;
 
 import br.com.yacamin.rafael.application.service.analyse.AnalyseOrchestratorService;
-import br.com.yacamin.rafael.application.service.model.BlockByBlockInferenceService;
 import br.com.yacamin.rafael.application.service.model.HorizonInferenceService;
 import br.com.yacamin.rafael.application.service.model.MinuteByMinuteInferenceService;
 import br.com.yacamin.rafael.domain.CandleIntervals;
-import br.com.yacamin.rafael.domain.RafaelBar;
+import br.com.yacamin.rafael.application.service.indicator.extension.MikhaelBar;
 import br.com.yacamin.rafael.domain.SymbolCandle;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseBarSeriesBuilder;
-import org.ta4j.core.num.DecimalNumFactory;
+import org.ta4j.core.num.DoubleNumFactory;
 import org.ta4j.core.num.Num;
 
 import java.time.Duration;
@@ -29,7 +28,6 @@ public class BarSeriesCacheService {
     private final DownloadCandleService downloadCandleService;
     private final AnalyseOrchestratorService analyseOrchestratorService;
     private final MinuteByMinuteInferenceService minuteByMinuteInferenceService;
-    private final BlockByBlockInferenceService blockByBlockInferenceService;
     private final HorizonInferenceService horizonInferenceService;
 
     @Getter
@@ -70,7 +68,6 @@ public class BarSeriesCacheService {
 
             // Inferências após features calculadas
             minuteByMinuteInferenceService.onCandleClosed(candle);
-            blockByBlockInferenceService.onCandleClosed(candle);
             horizonInferenceService.onCandleClosed(candle);
         }
 
@@ -106,7 +103,7 @@ public class BarSeriesCacheService {
         Num takerSellQuote = series.numFactory().numOf(candle.getTakerSellQuoteVolume());
         Num amount = close.multipliedBy(volume);
 
-        RafaelBar bar = new RafaelBar(
+        MikhaelBar bar = new MikhaelBar(
                 interval.getDuration(), normalizedEndTime,
                 open, high, low, close, volume, quoteVolume, amount,
                 (long) candle.getNumberOfTrades(),
@@ -120,7 +117,7 @@ public class BarSeriesCacheService {
         return new BaseBarSeriesBuilder()
                 .withName(key)
                 .withMaxBarCount(1000)
-                .withNumFactory(DecimalNumFactory.getInstance())
+                .withNumFactory(DoubleNumFactory.getInstance())
                 .build();
     }
 

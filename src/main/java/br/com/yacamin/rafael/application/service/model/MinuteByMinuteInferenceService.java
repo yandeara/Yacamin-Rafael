@@ -5,7 +5,8 @@ import br.com.yacamin.rafael.domain.BlockDuration;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 import br.com.yacamin.rafael.domain.InferencePrediction;
 import br.com.yacamin.rafael.domain.Market;
-import br.com.yacamin.rafael.domain.ModelDescriptor;
+import br.com.yacamin.rafael.domain.enumeration.PredictionType;
+import br.com.yacamin.rafael.domain.model.SavedModel;
 import br.com.yacamin.rafael.domain.SymbolCandle;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MinuteByMinuteInferenceService {
 
-    private static final String DEFAULT_MODEL_KEY = "xgb_BTCUSDT_h1_1m";
+    private static final PredictionType PRED_TYPE = PredictionType.M2M;
     private static final BlockDuration BLOCK_DURATION = BlockDuration.FIVE_MIN;
     private static final String ALGO = "RAFAEL";
 
@@ -61,11 +62,11 @@ public class MinuteByMinuteInferenceService {
         if (!live) return;
         if (candle.getInterval() != CandleIntervals.I1_MN) return;
 
-        var descriptorOpt = modelRegistryService.getByKey(DEFAULT_MODEL_KEY);
-        if (descriptorOpt.isEmpty()) return;
+        var modelOpt = modelRegistryService.findFirst(PRED_TYPE);
+        if (modelOpt.isEmpty()) return;
 
-        ModelDescriptor descriptor = descriptorOpt.get();
-        if (!candle.getSymbol().equalsIgnoreCase(descriptor.symbol())) return;
+        SavedModel model = modelOpt.get();
+        if (!candle.getSymbol().equalsIgnoreCase(model.symbol())) return;
 
         try {
             double candleClose = candle.getClose();
@@ -95,18 +96,25 @@ public class MinuteByMinuteInferenceService {
                 return;
             }
 
-            // 3. Extrair features (usa openTime pois é assim que estão indexadas no Scylla)
+            // 3. Extrair features (usa openTime pois é assim que estão indexadas no MongoDB)
             long t0 = System.currentTimeMillis();
 
+            List<String> featureNames = modelRegistryService.getFeatureNames(model.fileName())
+                    .orElse(null);
+            if (featureNames == null || featureNames.isEmpty()) {
+                log.error("[M2M] No featureNames in registry for model: {}", model.fileName());
+                return;
+            }
+
             float[] features = featureExtractorService.extractFeatures(
-                    candle.getSymbol(), openTime, CandleIntervals.I1_MN);
+                    candle.getSymbol(), openTime, CandleIntervals.I1_MN, featureNames);
 
             if (features == null || features.length == 0) {
                 log.warn("[M2M] No features for {} @ {}", candle.getSymbol(), openTime);
                 return;
             }
 
-            Booster booster = modelRegistryService.getBooster(descriptor.key());
+            Booster booster = modelRegistryService.getBooster(model.fileName());
             float[] probs = predict(booster, features);
 
             if (probs == null || probs.length < 2) {
@@ -146,7 +154,7 @@ public class MinuteByMinuteInferenceService {
             double modelThreshold = candle.getOpen();
 
             InferencePrediction prediction = new InferencePrediction(
-                    direction, confidence, minuteInBlock, openTime, descriptor.key(), candleClose);
+                    direction, confidence, minuteInBlock, openTime, model.fileName(), candleClose);
             prediction.setModelThreshold(modelThreshold);
 
             // VALID/INVALID: o candleClose é o preço no momento da previsão.

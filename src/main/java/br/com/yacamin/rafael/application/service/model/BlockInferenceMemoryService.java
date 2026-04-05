@@ -25,10 +25,6 @@ public class BlockInferenceMemoryService {
     private final Map<Long, List<InferencePrediction>> m2mInferences = new ConcurrentHashMap<>();
     private final Deque<Long> m2mOrder = new ArrayDeque<>();
 
-    // Block-by-block: blockUnix → 1 prediction (o candle 5m prevê ESTE bloco)
-    private final Map<Long, InferencePrediction> b2bInferences = new ConcurrentHashMap<>();
-    private final Deque<Long> b2bOrder = new ArrayDeque<>();
-
     // ── Minute-by-minute ──
 
     public synchronized void addPrediction(long blockUnix, InferencePrediction prediction) {
@@ -44,23 +40,6 @@ public class BlockInferenceMemoryService {
 
     public List<InferencePrediction> getPredictions(long blockUnix) {
         return m2mInferences.getOrDefault(blockUnix, List.of());
-    }
-
-    // ── Block-by-block ──
-
-    public synchronized void addBlockPrediction(long blockUnix, InferencePrediction prediction) {
-        if (!b2bInferences.containsKey(blockUnix)) {
-            b2bOrder.addLast(blockUnix);
-            evict(b2bOrder, b2bInferences);
-        }
-        b2bInferences.put(blockUnix, prediction);
-
-        log.debug("[B2B] Block {}: {} ({})",
-                blockUnix, prediction.getDirection(), prediction.getConfidence());
-    }
-
-    public InferencePrediction getBlockPrediction(long blockUnix) {
-        return b2bInferences.get(blockUnix);
     }
 
     // ── Horizon (H4) ──

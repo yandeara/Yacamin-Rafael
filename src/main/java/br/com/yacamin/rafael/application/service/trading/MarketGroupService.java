@@ -1,6 +1,6 @@
 package br.com.yacamin.rafael.application.service.trading;
 
-import br.com.yacamin.rafael.adapter.out.persistence.MarketGroupRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.gabriel.MarketGroupRepository;
 import br.com.yacamin.rafael.domain.BlockDuration;
 import br.com.yacamin.rafael.domain.MarketGroup;
 import jakarta.annotation.PreDestroy;

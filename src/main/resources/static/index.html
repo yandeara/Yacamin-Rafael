@@ -31,67 +31,6 @@
             display: flex;
         }
 
-        /* ── Config Page ───────────────────────────────── */
-        .config-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .config-section-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .config-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            gap: 16px;
-        }
-
-        .config-row:last-child { border-bottom: none; }
-
-        .config-label { flex: 1; }
-
-        .config-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .config-desc {
-            font-size: 11px;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-
-        .config-input {
-            width: 100px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--surface2);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .config-input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
         /* ── Sidebar ─────────────────────────────────────── */
         .sidebar {
             width: var(--sidebar-w);
@@ -886,13 +825,9 @@
                 Dashboard Simulado
             </button>
             <div class="nav-section">Sistema</div>
-            <button class="nav-item" data-page="algos" onclick="navigate('algos')">
-                <span class="nav-icon">&#9733;</span>
-                Algoritmos
-            </button>
-            <button class="nav-item" data-page="config" onclick="navigate('config')">
+            <button class="nav-item" data-page="models" onclick="navigate('models')">
                 <span class="nav-icon">&#9881;</span>
-                Configuracoes
+                Modelos
             </button>
         </div>
         <div class="sidebar-footer">
@@ -937,150 +872,14 @@
             </div>
         </div>
 
-        <!-- Page: Algoritmos -->
-        <div class="page" id="page-algos">
+        <!-- Page: Modelos -->
+        <div class="page" id="page-models">
             <div class="page-header">
-                <span class="page-title">Algoritmos</span>
-                <button onclick="fetchAlgorithmsPage()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Recarregar</button>
+                <span class="page-title">Modelos</span>
+                <button onclick="fetchModelsPage()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Recarregar</button>
             </div>
-            <div class="page-body">
-                <div class="config-section">
-                    <div class="config-section-title">Adicionar Algoritmo</div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-                        <div style="flex:1;min-width:120px;">
-                            <div class="config-desc" style="margin-bottom:4px;">Nome</div>
-                            <input id="algo-name" class="config-input" style="width:100%" placeholder="SIGMA">
-                        </div>
-                        <div style="flex:1;min-width:120px;">
-                            <div class="config-desc" style="margin-bottom:4px;">Motor</div>
-                            <select id="algo-engine" class="config-input" style="width:100%"></select>
-                        </div>
-                        <button onclick="addAlgorithm()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Adicionar</button>
-                    </div>
-                </div>
-                <div class="config-section">
-                    <div class="config-section-title">Algoritmos Configurados</div>
-                    <div id="algo-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page: Configuracoes -->
-        <div class="page" id="page-config">
-            <div class="page-header">
-                <span class="page-title">Configuracoes de Trading</span>
-            </div>
-            <div class="page-body" style="padding:20px 24px;max-width:600px;">
-                <div id="config-container">
-                    <div class="config-section">
-                        <div class="config-section-title">Abertura de Posicao</div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Delta Threshold</div>
-                                <div class="config-desc">Delta minimo para abrir UP (positivo) ou DOWN (negativo espelhado)</div>
-                            </div>
-                            <input type="number" id="cfg-delta" value="30" min="0" step="1" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Max Trades por Market</div>
-                                <div class="config-desc">Maximo de operacoes por bloco de 5min (0 = sem limite)</div>
-                            </div>
-                            <input type="number" id="cfg-max-trades" value="0" min="0" step="1" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Max SL por Market</div>
-                                <div class="config-desc">Maximo de Stop Loss antes de parar de operar naquele market (0 = sem limite)</div>
-                            </div>
-                            <input type="number" id="cfg-max-sl" value="0" min="0" step="1" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Max Delta Flips</div>
-                                <div class="config-desc">Max inversoes de delta em 30s antes de bloquear abertura (0 = desabilitado)</div>
-                            </div>
-                            <input type="number" id="cfg-max-flips" value="3" min="0" max="20" step="1" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Momentum Confirm</div>
-                                <div class="config-desc">Exige que o delta esteja acelerando na direcao da operacao (janela 2s)</div>
-                            </div>
-                            <select id="cfg-momentum" class="config-input" style="width:80px;">
-                                <option value="false">Off</option>
-                                <option value="true">On</option>
-                            </select>
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">End-Game (segundos)</div>
-                                <div class="config-desc">Ultimos N segundos do mercado para protecao end-game (0 = desabilitado)</div>
-                            </div>
-                            <input type="number" id="cfg-endgame-sec" value="10" min="0" max="60" step="1" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">End-Game SL Threshold</div>
-                                <div class="config-desc">No end-game, so fecha SL se bid abaixo deste valor (0.00 a 1.00)</div>
-                            </div>
-                            <input type="number" id="cfg-endgame-thr" value="0.30" min="0" max="1" step="0.05" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">SL Residual Threshold (shares)</div>
-                                <div class="config-desc">Se o SL vende parcial e sobram mais shares que este valor, tenta vender o residual. Abaixo, deixa pro resolve. (0 = sempre retry)</div>
-                            </div>
-                            <input type="number" id="cfg-sl-residual" value="1.0" min="0" max="100" step="0.1" class="config-input">
-                        </div>
-                    </div>
-                    <div class="config-section">
-                        <div class="config-section-title">Simulacao</div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Atraso de Execucao (ms)</div>
-                                <div class="config-desc">Tempo de atraso simulado para abertura e fechamento de ordens (0 = instantaneo)</div>
-                            </div>
-                            <input type="number" id="cfg-exec-delay" value="5000" min="0" max="30000" step="500" class="config-input">
-                        </div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Spread Penalty (ticks)</div>
-                                <div class="config-desc">Penalidade de spread simulada. 1 tick = 0.01. Piora entry/exit price (0 = sem penalty)</div>
-                            </div>
-                            <input type="number" id="cfg-spread-penalty" value="0" min="0" max="10" step="1" class="config-input">
-                        </div>
-                    </div>
-                    <div class="config-section">
-                        <div class="config-section-title">Filtro de Horas</div>
-                        <div class="config-row">
-                            <div class="config-label">
-                                <div class="config-name">Ativar Filtro de Horas</div>
-                                <div class="config-desc">Quando ligado, so opera nas horas selecionadas (horario SP)</div>
-                            </div>
-                            <select id="cfg-hours-enabled" class="config-input" style="width:80px;">
-                                <option value="false">Off</option>
-                                <option value="true">On</option>
-                            </select>
-                        </div>
-                        <div class="config-row" style="flex-direction:column;align-items:stretch;">
-                            <div class="config-label" style="margin-bottom:10px;">
-                                <div class="config-name">Horas Permitidas (clique para alternar)</div>
-                                <div class="config-desc">Verde = opera / Cinza = parado. Horario de Sao Paulo.</div>
-                            </div>
-                            <div id="cfg-hours-grid" style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;"></div>
-                            <div style="display:flex;gap:8px;margin-top:8px;">
-                                <button onclick="setAllHours(true)" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--green);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Ligar Todas</button>
-                                <button onclick="setAllHours(false)" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Desligar Todas</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:12px;margin-top:20px;">
-                        <button onclick="saveConfig()" style="flex:1;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Salvar Configuracoes</button>
-                        <button onclick="fetchConfig()" style="padding:12px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">Resetar</button>
-                    </div>
-                    <div id="config-status" style="margin-top:12px;font-size:12px;font-weight:600;text-align:center;"></div>
-                </div>
+            <div class="page-body" style="padding:20px 24px;">
+                <div id="models-container"></div>
             </div>
         </div>
 
@@ -1187,13 +986,8 @@
                 overlay.classList.remove('show');
             }
 
-            if (page === 'algos') {
-                fetchAlgorithmsPage();
-                return;
-            }
-
-            if (page === 'config') {
-                fetchConfig();
+            if (page === 'models') {
+                fetchModelsPage();
                 return;
             }
 
@@ -1792,291 +1586,93 @@
 
 
 
-        /* removed: heatmap, entry-history, algo-compare pages */
-        /* ── Hours Grid ───────────────────────────────── */
-        let cfgAllowedHours = new Set();
-        for (let h = 0; h < 24; h++) cfgAllowedHours.add(h);
-
-        function renderHoursGrid() {
-            const grid = document.getElementById('cfg-hours-grid');
-            grid.innerHTML = '';
-            for (let h = 0; h < 24; h++) {
-                const btn = document.createElement('button');
-                btn.textContent = String(h).padStart(2, '0');
-                btn.dataset.hour = h;
-                const on = cfgAllowedHours.has(h);
-                btn.style.cssText = `padding:8px 0;border-radius:6px;border:1px solid ${on ? 'var(--green)' : 'var(--border)'};background:${on ? 'rgba(34,197,94,0.15)' : 'var(--surface2)'};color:${on ? 'var(--green)' : 'var(--text-dim)'};font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;`;
-                btn.onclick = () => toggleHour(h);
-                grid.appendChild(btn);
-            }
-        }
-
-        function toggleHour(h) {
-            if (cfgAllowedHours.has(h)) cfgAllowedHours.delete(h);
-            else cfgAllowedHours.add(h);
-            renderHoursGrid();
-        }
-
-        function setAllHours(on) {
-            cfgAllowedHours.clear();
-            if (on) { for (let h = 0; h < 24; h++) cfgAllowedHours.add(h); }
-            renderHoursGrid();
-        }
-
-        /* ── Config Page ──────────────────────────────── */
-        /* ── Algorithms Page ──────────────────────────── */
-        async function fetchAlgorithmsPage() {
-            console.log('[AlgosPage] fetching...');
+        /* ── Models Page ──────────────────────────────── */
+        async function fetchModelsPage() {
+            const container = document.getElementById('models-container');
+            container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Carregando...</div>';
             try {
-                const [algosRes, enginesRes] = await Promise.all([
-                    fetch('/api/dashboard/algorithms/all'),
-                    fetch('/api/dashboard/algorithms/engines')
-                ]);
-                console.log('[AlgosPage] algosRes status:', algosRes.status, 'enginesRes status:', enginesRes.status);
+                const res = await fetch('/api/dashboard/models');
+                if (!res.ok) throw new Error(res.status);
+                const models = await res.json();
 
-                if (algosRes.status === 401) { window.location.href = '/login'; return; }
+                // Agrupar por predictionType
+                const grouped = {};
+                const typeOrder = ['HORIZON', 'M2M', 'BLOCK', 'C2C'];
+                const typeLabels = {
+                    HORIZON: 'Horizon Intra-Block',
+                    M2M: 'Minute-to-Minute',
+                    BLOCK: 'Block-by-Block',
+                    C2C: 'Close-to-Close'
+                };
+                const typeDescs = {
+                    HORIZON: 'Preve final do bloco a partir do minuto 1',
+                    M2M: 'Preve proximo candle 1m, todo minuto',
+                    BLOCK: 'Preve proximo bloco 5m, cada 5 minutos',
+                    C2C: 'Preve direcao close atual vs close proximo candle'
+                };
 
-                const algos = await algosRes.json();
-                const engines = await enginesRes.json();
-                console.log('[AlgosPage] algos:', algos.length, 'engines:', engines.length, 'data:', JSON.stringify(algos));
-
-                const sel = document.getElementById('algo-engine');
-                if (!sel) { console.error('[AlgosPage] algo-engine element not found!'); return; }
-                sel.innerHTML = engines.map(e => `<option value="${e}">${e}</option>`).join('');
-
-                const list = document.getElementById('algo-list');
-                if (!list) { console.error('[AlgosPage] algo-list element not found!'); return; }
-
-                if (!algos.length) {
-                    list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Nenhum algoritmo configurado</div>';
-                    console.log('[AlgosPage] no algos found');
-                    return;
+                for (const m of models) {
+                    if (!grouped[m.predictionType]) grouped[m.predictionType] = [];
+                    grouped[m.predictionType].push(m);
                 }
-                list.innerHTML = algos.map(a => {
-                    const running = a.running;
-                    const statusColor = running ? 'var(--green)' : 'var(--text-dim)';
-                    const statusText = running ? 'RODANDO' : 'PARADO';
-                    const activeColor = a.active ? 'var(--green)' : 'var(--yellow)';
-                    const activeText = a.active ? 'ATIVO' : 'INATIVO';
-                    return `<div class="config-row">
-                        <div class="config-label">
-                            <div class="config-name">${escHtml(a.name)}<span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:6px;">${escHtml(a.engine)}</span></div>
-                            <div class="config-desc"><span style="color:${statusColor};font-weight:700;">${statusText}</span> · <span style="color:${activeColor};">${activeText}</span></div>
-                        </div>
-                        <div style="display:flex;gap:6px;">
-                            <button onclick="toggleAlgoRules('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:inherit;font-size:11px;cursor:pointer;">Regras</button>
-                            <button onclick="duplicateAlgo('${a.id}','${escHtml(a.name)}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--purple);background:transparent;color:var(--purple);font-family:inherit;font-size:11px;cursor:pointer;">Copiar</button>
-                            ${a.active
-                                ? `<button onclick="pauseAlgo('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);font-family:inherit;font-size:11px;cursor:pointer;">Pausar</button>`
-                                : `<button onclick="startAlgo('${a.id}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--green);background:transparent;color:var(--green);font-family:inherit;font-size:11px;cursor:pointer;">Iniciar</button>`
+
+                let html = '';
+                for (const type of typeOrder) {
+                    const list = grouped[type] || [];
+                    const label = typeLabels[type] || type;
+                    const desc = typeDescs[type] || '';
+
+                    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">`;
+                    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">`;
+                    html += `<div>`;
+                    html += `<div style="font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">${escHtml(type)}</div>`;
+                    html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${escHtml(label)} — ${escHtml(desc)}</div>`;
+                    html += `</div>`;
+                    html += `</div>`;
+
+                    if (list.length === 0) {
+                        html += `<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Nenhum modelo disponivel</div>`;
+                    } else {
+                        for (const m of list) {
+                            const isActive = m.active;
+                            const borderColor = isActive ? 'var(--green)' : 'var(--border)';
+                            const statusColor = isActive ? 'var(--green)' : 'var(--text-dim)';
+                            const statusText = isActive ? 'ATIVO' : 'INATIVO';
+                            const statusBg = isActive ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)';
+
+                            html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid ${borderColor};border-radius:8px;margin-bottom:6px;background:var(--bg);">`;
+                            html += `<div style="flex:1;">`;
+                            html += `<div style="font-size:13px;font-weight:600;color:var(--text);">${escHtml(m.fileName)}</div>`;
+                            html += `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">`;
+                            html += `${escHtml(m.symbol)} · ${escHtml(m.timeframe)} · H${m.horizon} · ${escHtml(m.range)} · ${m.featureCount} features`;
+                            html += `</div>`;
+                            html += `</div>`;
+                            html += `<div style="display:flex;align-items:center;gap:8px;">`;
+                            html += `<span style="font-size:10px;font-weight:700;color:${statusColor};padding:2px 8px;border-radius:3px;background:${statusBg};">${statusText}</span>`;
+                            if (!isActive) {
+                                html += `<button onclick="activateModel('${escHtml(m.fileName)}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--green);background:transparent;color:var(--green);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">Ativar</button>`;
                             }
-                            <button onclick="removeAlgo('${a.id}','${escHtml(a.name)}')" style="padding:6px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-family:inherit;font-size:11px;cursor:pointer;">Remover</button>
-                        </div>
-                    </div>
-                    <div id="algo-rules-${a.id}" style="display:none;grid-column:1/-1;padding:12px;background:var(--surface2);border-radius:8px;margin-top:-6px;"></div>`;
-                }).join('');
-            } catch (e) { console.error('[AlgosPage] FAILED:', e.message, e); }
-        }
+                            html += `</div>`;
+                            html += `</div>`;
+                        }
+                    }
 
-        async function addAlgorithm() {
-            const name = document.getElementById('algo-name').value.trim();
-            const engine = document.getElementById('algo-engine').value;
-            if (!name) return;
-            await fetch(`/api/dashboard/algorithms/add?name=${encodeURIComponent(name)}&engine=${encodeURIComponent(engine)}`, { method: 'POST' });
-            document.getElementById('algo-name').value = '';
-            fetchAlgorithmsPage();
-            fetchAlgorithms();
-        }
+                    html += `</div>`;
+                }
 
-        async function startAlgo(id) {
-            await fetch(`/api/dashboard/algorithms/start?id=${id}`, { method: 'POST' });
-            fetchAlgorithmsPage();
-            fetchAlgorithms();
-        }
-
-        async function pauseAlgo(id) {
-            await fetch(`/api/dashboard/algorithms/pause?id=${id}`, { method: 'POST' });
-            fetchAlgorithmsPage();
-            fetchAlgorithms();
-        }
-
-        async function duplicateAlgo(id, sourceName) {
-            const newName = prompt(`Copiar algoritmo ${sourceName}.\nDigite o nome do novo algoritmo:`);
-            if (!newName || !newName.trim()) return;
-            await fetch(`/api/dashboard/algorithms/duplicate?id=${id}&name=${encodeURIComponent(newName.trim())}`, { method: 'POST' });
-            fetchAlgorithmsPage();
-            fetchAlgorithms();
-        }
-
-        async function removeAlgo(id, name) {
-            if (!confirm(`Remover algoritmo ${name}?`)) return;
-            await fetch(`/api/dashboard/algorithms/remove?id=${id}`, { method: 'POST' });
-            fetchAlgorithmsPage();
-            fetchAlgorithms();
-        }
-
-        let ruleTypesCache = null;
-
-        async function toggleAlgoRules(algoId) {
-            const el = document.getElementById('algo-rules-' + algoId);
-            if (el.style.display !== 'none') {
-                el.style.display = 'none';
-                return;
-            }
-            el.style.display = 'block';
-            await loadAlgoRules(algoId);
-        }
-
-        async function loadAlgoRules(algoId) {
-            const el = document.getElementById('algo-rules-' + algoId);
-            if (!ruleTypesCache) {
-                const rtRes = await fetch('/api/dashboard/algorithms/rule-types');
-                ruleTypesCache = await rtRes.json();
-            }
-            const res = await fetch(`/api/dashboard/algorithms/${algoId}/rules`);
-            const data = await res.json();
-            const rules = data.rules || [];
-            const existingTypes = new Set(rules.map(r => r.ruleType));
-
-            let html = '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Regras de ' + escHtml(data.name) + '</div>';
-
-            if (rules.length === 0) {
-                html += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Nenhuma regra configurada</div>';
-            }
-
-            for (const r of rules) {
-                const rt = ruleTypesCache.find(t => t.name === r.ruleType);
-                const desc = rt ? rt.description : r.ruleType;
-                const phaseColor = r.phase === 'ENTRY' ? 'var(--green)' : 'var(--orange)';
-                const statusBg = r.enabled ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)';
-                const statusColor = r.enabled ? 'var(--green)' : 'var(--text-dim)';
-                const statusText = r.enabled ? 'ATIVA' : 'INATIVA';
-                const uid = algoId + '-' + r.ruleType;
-                html += `<div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--bg);">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="font-size:10px;font-weight:700;color:${phaseColor};padding:2px 6px;border-radius:3px;background:${phaseColor === 'var(--green)' ? 'rgba(34,197,94,0.12)' : 'rgba(249,115,22,0.12)'};">${r.phase}</span>
-                        <span style="flex:1;font-size:12px;font-weight:600;">${escHtml(desc)}</span>
-                        <span style="font-size:10px;font-weight:700;color:${statusColor};padding:2px 8px;border-radius:3px;background:${statusBg};">${statusText}</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:10px;color:var(--text-dim);min-width:40px;">Valor:</span>
-                        <span style="font-size:13px;font-weight:700;color:var(--text);min-width:50px;">${r.value}</span>
-                        <span style="font-size:10px;color:var(--text-dim);margin-left:8px;">Novo:</span>
-                        <input id="rule-val-${uid}" type="number" step="0.01" value="${r.value}" style="width:70px;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px;text-align:center;">
-                        <button onclick="saveAlgoRule('${algoId}','${r.ruleType}','${uid}')" style="padding:4px 10px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;">Salvar</button>
-                        <button onclick="toggleAlgoRule('${algoId}','${r.ruleType}',${!r.enabled})" style="padding:4px 10px;border-radius:4px;border:1px solid ${r.enabled ? 'var(--yellow)' : 'var(--green)'};background:transparent;color:${r.enabled ? 'var(--yellow)' : 'var(--green)'};font-family:inherit;font-size:10px;cursor:pointer;">${r.enabled ? 'Desativar' : 'Ativar'}</button>
-                        <button onclick="removeAlgoRule('${algoId}','${r.ruleType}')" style="padding:4px 8px;border-radius:4px;border:1px solid var(--red);background:transparent;color:var(--red);font-family:inherit;font-size:10px;cursor:pointer;">Remover</button>
-                    </div>
-                </div>`;
-            }
-
-            // Add rule dropdown for missing types
-            const missing = ruleTypesCache.filter(t => !existingTypes.has(t.name));
-            if (missing.length > 0) {
-                html += `<div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
-                    <select id="add-rule-type-${algoId}" style="flex:1;padding:4px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;">
-                        ${missing.map(t => `<option value="${t.name}" data-default="${t.defaultValue}">${t.description} (${t.phase})</option>`).join('')}
-                    </select>
-                    <button onclick="addAlgoRule('${algoId}')" style="padding:4px 10px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:11px;cursor:pointer;">Adicionar</button>
-                </div>`;
-            }
-
-            el.innerHTML = html;
-        }
-
-        async function saveAlgoRule(algoId, ruleType, uid) {
-            const val = document.getElementById('rule-val-' + uid).value;
-            await fetch(`/api/dashboard/algorithms/${algoId}/rules/update?ruleType=${ruleType}&value=${val}`, { method: 'POST' });
-            loadAlgoRules(algoId);
-        }
-
-        async function toggleAlgoRule(algoId, ruleType, enabled) {
-            await fetch(`/api/dashboard/algorithms/${algoId}/rules/toggle?ruleType=${ruleType}&enabled=${enabled}`, { method: 'POST' });
-            loadAlgoRules(algoId);
-        }
-
-        async function removeAlgoRule(algoId, ruleType) {
-            await fetch(`/api/dashboard/algorithms/${algoId}/rules/remove?ruleType=${ruleType}`, { method: 'POST' });
-            loadAlgoRules(algoId);
-        }
-
-        async function addAlgoRule(algoId) {
-            const sel = document.getElementById('add-rule-type-' + algoId);
-            const ruleType = sel.value;
-            const defaultVal = sel.selectedOptions[0].dataset.default;
-            await fetch(`/api/dashboard/algorithms/${algoId}/rules/add?ruleType=${ruleType}&value=${defaultVal}`, { method: 'POST' });
-            loadAlgoRules(algoId);
-        }
-
-        async function fetchConfig() {
-            try {
-                const res = await fetch('/api/dashboard/trading/config');
-                if (!res.ok) throw new Error(res.status);
-                const data = await res.json();
-                document.getElementById('cfg-hours-enabled').value = String(data.hoursFilterEnabled || false);
-                cfgAllowedHours = new Set(data.allowedHours || []);
-                renderHoursGrid();
-                document.getElementById('cfg-delta').value = data.deltaThreshold;
-                document.getElementById('cfg-max-trades').value = data.maxTradesPerMarket;
-                document.getElementById('cfg-max-sl').value = data.maxSlPerMarket;
-                document.getElementById('cfg-exec-delay').value = data.executionDelayMs;
-                document.getElementById('cfg-spread-penalty').value = data.spreadPenaltyTicks;
-                document.getElementById('cfg-max-flips').value = data.maxDeltaFlips;
-                document.getElementById('cfg-momentum').value = String(data.momentumConfirmEnabled);
-                document.getElementById('cfg-endgame-sec').value = data.endGameSeconds;
-                document.getElementById('cfg-endgame-thr').value = data.endGameSlThreshold;
-                document.getElementById('cfg-sl-residual').value = data.slResidualThreshold;
-                document.getElementById('config-status').textContent = '';
+                container.innerHTML = html;
             } catch (e) {
-                console.error('Fetch config failed:', e);
+                container.innerHTML = '<div style="color:var(--red);font-size:12px;">Erro ao carregar modelos: ' + escHtml(e.message) + '</div>';
             }
         }
 
-        async function saveConfig() {
-            const body = {
-                hoursFilterEnabled: document.getElementById('cfg-hours-enabled').value === 'true',
-                allowedHours: Array.from(cfgAllowedHours).sort((a, b) => a - b),
-                deltaThreshold: parseFloat(document.getElementById('cfg-delta').value),
-                maxTradesPerMarket: parseInt(document.getElementById('cfg-max-trades').value),
-                maxSlPerMarket: parseInt(document.getElementById('cfg-max-sl').value),
-                executionDelayMs: parseInt(document.getElementById('cfg-exec-delay').value),
-                spreadPenaltyTicks: parseInt(document.getElementById('cfg-spread-penalty').value),
-                maxDeltaFlips: parseInt(document.getElementById('cfg-max-flips').value),
-                momentumConfirmEnabled: document.getElementById('cfg-momentum').value === 'true',
-                endGameSeconds: parseFloat(document.getElementById('cfg-endgame-sec').value),
-                endGameSlThreshold: parseFloat(document.getElementById('cfg-endgame-thr').value),
-                slResidualThreshold: parseFloat(document.getElementById('cfg-sl-residual').value)
-            };
+        async function activateModel(fileName) {
             try {
-                const res = await fetch('/api/dashboard/trading/config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+                const res = await fetch(`/api/dashboard/models/activate?fileName=${encodeURIComponent(fileName)}`, { method: 'POST' });
                 if (!res.ok) throw new Error(res.status);
-                const data = await res.json();
-                document.getElementById('cfg-hours-enabled').value = String(data.hoursFilterEnabled || false);
-                cfgAllowedHours = new Set(data.allowedHours || []);
-                renderHoursGrid();
-                document.getElementById('cfg-delta').value = data.deltaThreshold;
-                document.getElementById('cfg-max-trades').value = data.maxTradesPerMarket;
-                document.getElementById('cfg-max-sl').value = data.maxSlPerMarket;
-                document.getElementById('cfg-exec-delay').value = data.executionDelayMs;
-                document.getElementById('cfg-spread-penalty').value = data.spreadPenaltyTicks;
-                document.getElementById('cfg-max-flips').value = data.maxDeltaFlips;
-                document.getElementById('cfg-momentum').value = String(data.momentumConfirmEnabled);
-                document.getElementById('cfg-endgame-sec').value = data.endGameSeconds;
-                document.getElementById('cfg-endgame-thr').value = data.endGameSlThreshold;
-                document.getElementById('cfg-sl-residual').value = data.slResidualThreshold;
-                const statusEl = document.getElementById('config-status');
-                statusEl.textContent = 'Configuracoes salvas com sucesso';
-                statusEl.style.color = 'var(--green)';
-                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+                fetchModelsPage();
             } catch (e) {
-                console.error('Save config failed:', e);
-                const statusEl = document.getElementById('config-status');
-                statusEl.textContent = 'Erro ao salvar: ' + e.message;
-                statusEl.style.color = 'var(--red)';
+                alert('Erro ao ativar modelo: ' + e.message);
             }
         }
 

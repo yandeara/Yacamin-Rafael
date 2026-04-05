@@ -1,12 +1,9 @@
 package br.com.yacamin.rafael.application.service.candle;
 
-import br.com.yacamin.rafael.adapter.out.persistence.Candle1MnRepository;
-import br.com.yacamin.rafael.adapter.out.persistence.Candle5MnRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.mikhael.CandleMongoRepository;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 import br.com.yacamin.rafael.domain.SymbolCandle;
-import br.com.yacamin.rafael.domain.scylla.entity.Candle1Mn;
-import br.com.yacamin.rafael.domain.scylla.entity.Candle5Mn;
-import br.com.yacamin.rafael.domain.scylla.entity.NewCandleEntity;
+import br.com.yacamin.rafael.domain.mongo.document.CandleDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +25,7 @@ public class WarmupService {
     // Garante que quando o primeiro candle live chegar, há 1000 indicadores sólidos.
     private static final int DOWNLOAD_DEPTH = 2000;
 
-    private final Candle1MnRepository candle1MnRepository;
-    private final Candle5MnRepository candle5MnRepository;
+    private final CandleMongoRepository candleMongoRepository;
     private final BarSeriesCacheService barSeriesCacheService;
     private final DownloadCandleService downloadCandleService;
     private final SyncCheckService syncCheckService;
@@ -43,17 +39,17 @@ public class WarmupService {
         Instant syncPoint = syncCheckService.syncCheck(symbol, interval);
 
         // 1) Descobrir ultimo candle no banco
-        NewCandleEntity lastCandle = findLastCandle(symbol, interval);
+        CandleDocument lastCandle = candleMongoRepository.findLatest(symbol, interval);
 
         long downloadMinutes = DOWNLOAD_DEPTH * (interval.getDuration().toMinutes());
 
         if (lastCandle == null) {
-            log.warn("[WARMUP] No candles in Scylla for {} [{}] — downloading {} candles of history",
+            log.warn("[WARMUP] No candles in MongoDB for {} [{}] — downloading {} candles of history",
                     symbol, interval, DOWNLOAD_DEPTH);
             Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
             Instant start = now.minus(downloadMinutes, ChronoUnit.MINUTES);
             downloadCandleService.download(interval, symbol, start, now);
-            lastCandle = findLastCandle(symbol, interval);
+            lastCandle = candleMongoRepository.findLatest(symbol, interval);
             if (lastCandle == null) {
                 log.error("[WARMUP] Still no candles after download — aborting");
                 return;
@@ -97,13 +93,13 @@ public class WarmupService {
     }
 
     /**
-     * Le candles do Scylla, verifica integridade (sem gaps), e alimenta BarSeries.
+     * Le candles do MongoDB, verifica integridade (sem gaps), e alimenta BarSeries.
      * Se encontrar gaps, baixa os candles faltantes antes de processar.
      */
     private int warmupProcess(String symbol, CandleIntervals interval, Instant start, Instant end) {
-        List<? extends NewCandleEntity> candles = findCandlesInRange(symbol, interval, start, end);
+        List<CandleDocument> candles = candleMongoRepository.findByRange(symbol, start, end, interval);
 
-        log.info("[WARMUP] warmupProcess [{}]: {} candles from Scylla ({} -> {})", interval, candles.size(), start, end);
+        log.info("[WARMUP] warmupProcess [{}]: {} candles from MongoDB ({} -> {})", interval, candles.size(), start, end);
 
         if (candles.isEmpty()) {
             log.warn("[WARMUP] warmupProcess: no candles in range");
@@ -118,8 +114,8 @@ public class WarmupService {
 
         int loaded = 0;
         int skipped = 0;
-        for (NewCandleEntity entity : candles) {
-            SymbolCandle candle = toSymbolCandle(entity, interval);
+        for (CandleDocument doc : candles) {
+            SymbolCandle candle = SymbolCandle.fromCandleDocument(doc, interval);
             if (candle.getNumberOfTrades() > 0) {
                 barSeriesCacheService.update(symbol, interval, candle, false);
                 loaded++;
@@ -140,9 +136,9 @@ public class WarmupService {
      * Se faltar candles, baixa do Binance.
      * Usa Set<Instant> para O(1) lookup — eficiente mesmo com 1000+ candles.
      */
-    private List<? extends NewCandleEntity> integrityCheck(String symbol, CandleIntervals interval,
-                                                            List<? extends NewCandleEntity> candles,
-                                                            Instant start, Instant end) {
+    private List<CandleDocument> integrityCheck(String symbol, CandleIntervals interval,
+                                                 List<CandleDocument> candles,
+                                                 Instant start, Instant end) {
         long stepSeconds = interval.getDuration().toSeconds();
         long expectedCount = Duration.between(start, end).toSeconds() / stepSeconds + 1;
 
@@ -156,7 +152,7 @@ public class WarmupService {
 
         // Build Set de openTimes existentes para O(1) lookup
         Set<Instant> existing = new HashSet<>(candles.size());
-        for (NewCandleEntity c : candles) {
+        for (CandleDocument c : candles) {
             existing.add(c.getOpenTime());
         }
 
@@ -189,8 +185,8 @@ public class WarmupService {
             downloadCandleService.download(interval, symbol, range[0], range[1]);
         }
 
-        // Re-ler do Scylla apos preencher gaps
-        List<? extends NewCandleEntity> refreshed = findCandlesInRange(symbol, interval, start, end);
+        // Re-ler do MongoDB apos preencher gaps
+        List<CandleDocument> refreshed = candleMongoRepository.findByRange(symbol, start, end, interval);
 
         long stillMissing = expectedCount - refreshed.size();
         if (stillMissing > 0) {
@@ -201,33 +197,6 @@ public class WarmupService {
         }
 
         return refreshed;
-    }
-
-    // ---- Helpers para dispatch por intervalo ----
-
-    private NewCandleEntity findLastCandle(String symbol, CandleIntervals interval) {
-        return switch (interval) {
-            case I1_MN -> candle1MnRepository.findFirstBySymbolOrderByOpenTimeDesc(symbol);
-            case I5_MN -> candle5MnRepository.findFirstBySymbolOrderByOpenTimeDesc(symbol);
-            default -> throw new IllegalArgumentException("Interval not supported: " + interval);
-        };
-    }
-
-    private List<? extends NewCandleEntity> findCandlesInRange(String symbol, CandleIntervals interval,
-                                                                Instant start, Instant end) {
-        return switch (interval) {
-            case I1_MN -> candle1MnRepository.findBySymbolAndOpenTimeGreaterThanEqualAndOpenTimeLessThanEqual(symbol, start, end);
-            case I5_MN -> candle5MnRepository.findBySymbolAndOpenTimeGreaterThanEqualAndOpenTimeLessThanEqual(symbol, start, end);
-            default -> throw new IllegalArgumentException("Interval not supported: " + interval);
-        };
-    }
-
-    private SymbolCandle toSymbolCandle(NewCandleEntity entity, CandleIntervals interval) {
-        return switch (interval) {
-            case I1_MN -> SymbolCandle.fromCandle1Mn((Candle1Mn) entity);
-            case I5_MN -> SymbolCandle.fromCandle5Mn((Candle5Mn) entity);
-            default -> throw new IllegalArgumentException("Interval not supported: " + interval);
-        };
     }
 
     /**

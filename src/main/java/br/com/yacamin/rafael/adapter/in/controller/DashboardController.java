@@ -7,6 +7,7 @@ import br.com.yacamin.rafael.application.service.model.BlockInferenceMemoryServi
 import br.com.yacamin.rafael.application.service.model.ModelRegistryService;
 import br.com.yacamin.rafael.application.service.trading.BinanceStreamConfigService;
 import br.com.yacamin.rafael.application.service.trading.MarketGroupService;
+import br.com.yacamin.rafael.domain.mongo.document.ModelRegistryDocument;
 import br.com.yacamin.rafael.domain.BlockDuration;
 import br.com.yacamin.rafael.domain.InferencePrediction;
 import br.com.yacamin.rafael.domain.Market;
@@ -39,7 +40,7 @@ public class DashboardController {
 
     @GetMapping("/markets")
     public Map<String, Object> getMarkets(
-            @RequestParam(required = false) String marketGroup) {
+            @RequestParam(name = "marketGroup", required = false) String marketGroup) {
 
         Map<String, Market> all = simulationMarketMemoryService.getAllMarkets(ALGO);
 
@@ -108,25 +109,6 @@ public class DashboardController {
             row.put("inferences", inferenceList);
             row.put("blockOpenPrice", blockOpenPrice != null ? round(blockOpenPrice, 2) : null);
 
-            // Inferência block-by-block (candle 5m prevê este bloco)
-            InferencePrediction b2b = blockInferenceMemory.getBlockPrediction(unix);
-            if (b2b != null) {
-                Map<String, Object> b2bMap = new LinkedHashMap<>();
-                b2bMap.put("direction", b2b.getDirection());
-                b2bMap.put("confidence", round(b2b.getConfidence(), 4));
-                b2bMap.put("openMid", round(b2b.getOpenMid(), 2));
-                b2bMap.put("closeMid", b2b.getCloseMid() != null ? round(b2b.getCloseMid(), 2) : null);
-                b2bMap.put("hit", b2b.getHit());
-                b2bMap.put("modelThreshold", b2b.getModelThreshold() != null ? round(b2b.getModelThreshold(), 2) : null);
-                b2bMap.put("marketOpen", b2b.getMarketOpen() != null ? round(b2b.getMarketOpen(), 2) : null);
-                b2bMap.put("valid", b2b.getValid());
-                b2bMap.put("resolvedOutcome", b2b.getResolvedOutcome());
-                b2bMap.put("hitResolve", b2b.getHitResolve());
-                row.put("blockPrediction", b2bMap);
-            } else {
-                row.put("blockPrediction", null);
-            }
-
             // Inferência horizon H4 (candle 1m min1 prevê o fim do mesmo bloco)
             InferencePrediction h4 = blockInferenceMemory.getHorizonPrediction(unix);
             if (h4 != null) {
@@ -166,22 +148,22 @@ public class DashboardController {
     }
 
     @PostMapping("/streams/add")
-    public Object addStream(@RequestParam String symbol) {
+    public Object addStream(@RequestParam(name = "symbol") String symbol) {
         return binanceStreamConfigService.add(symbol);
     }
 
     @PostMapping("/streams/start")
-    public void startStream(@RequestParam String id) {
+    public void startStream(@RequestParam(name = "id") String id) {
         binanceStreamConfigService.start(id);
     }
 
     @PostMapping("/streams/pause")
-    public void pauseStream(@RequestParam String id) {
+    public void pauseStream(@RequestParam(name = "id") String id) {
         binanceStreamConfigService.pause(id);
     }
 
     @PostMapping("/streams/remove")
-    public void removeStream(@RequestParam String id) {
+    public void removeStream(@RequestParam(name = "id") String id) {
         binanceStreamConfigService.remove(id);
     }
 
@@ -194,26 +176,26 @@ public class DashboardController {
 
     @PostMapping("/markets/groups/add")
     public Object addMarketGroup(
-            @RequestParam String slugPrefix,
-            @RequestParam String displayName,
-            @RequestParam String blockDuration,
-            @RequestParam String binanceStream) {
+            @RequestParam(name = "slugPrefix") String slugPrefix,
+            @RequestParam(name = "displayName") String displayName,
+            @RequestParam(name = "blockDuration") String blockDuration,
+            @RequestParam(name = "binanceStream") String binanceStream) {
         BlockDuration duration = BlockDuration.valueOf(blockDuration);
         return marketGroupService.add(slugPrefix, displayName, duration, binanceStream);
     }
 
     @PostMapping("/markets/groups/start")
-    public void startMarketGroup(@RequestParam String id) {
+    public void startMarketGroup(@RequestParam(name = "id") String id) {
         marketGroupService.start(id);
     }
 
     @PostMapping("/markets/groups/pause")
-    public void pauseMarketGroup(@RequestParam String id) {
+    public void pauseMarketGroup(@RequestParam(name = "id") String id) {
         marketGroupService.pause(id);
     }
 
     @PostMapping("/markets/groups/remove")
-    public void removeMarketGroup(@RequestParam String id) {
+    public void removeMarketGroup(@RequestParam(name = "id") String id) {
         marketGroupService.remove(id);
     }
 
@@ -224,17 +206,30 @@ public class DashboardController {
         List<Map<String, Object>> result = new ArrayList<>();
         for (var m : modelRegistryService.getAll()) {
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("key", m.key());
+            row.put("predictionType", m.predictionType().name());
             row.put("type", m.type());
             row.put("symbol", m.symbol());
             row.put("horizon", m.horizon());
-            row.put("interval", m.interval().getValue());
-            row.put("trainStart", m.trainStart().toString());
-            row.put("trainEnd", m.trainEnd().toString());
+            row.put("timeframe", m.timeframe());
+            row.put("range", m.displayRange());
             row.put("fileName", m.fileName());
+
+            var reg = modelRegistryService.getRegistry(m.fileName());
+            row.put("active", reg.map(ModelRegistryDocument::isActive).orElse(false));
+            row.put("featureCount", reg.map(r -> r.getFeatureNames() != null ? r.getFeatureNames().size() : 0).orElse(0));
+
             result.add(row);
         }
         return result;
+    }
+
+    @PostMapping("/models/activate")
+    public Map<String, Object> activateModel(@RequestParam(name = "fileName") String fileName) {
+        modelRegistryService.activateModel(fileName);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("ok", true);
+        res.put("fileName", fileName);
+        return res;
     }
 
     @GetMapping("/markets/durations")

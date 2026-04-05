@@ -5,7 +5,8 @@ import br.com.yacamin.rafael.domain.BlockDuration;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 import br.com.yacamin.rafael.domain.InferencePrediction;
 import br.com.yacamin.rafael.domain.Market;
-import br.com.yacamin.rafael.domain.ModelDescriptor;
+import br.com.yacamin.rafael.domain.enumeration.PredictionType;
+import br.com.yacamin.rafael.domain.model.SavedModel;
 import br.com.yacamin.rafael.domain.SymbolCandle;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import ml.dmlc.xgboost4j.java.XGBoostError;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Lógica HORIZON H4: roda inferência no primeiro candle 1m do bloco para prever o fim do bloco.
@@ -41,7 +43,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class HorizonInferenceService {
 
-    private static final String DEFAULT_MODEL_KEY = "xgb_BTCUSDT_h4_1m";
+    private static final PredictionType PRED_TYPE = PredictionType.HORIZON;
     private static final BlockDuration BLOCK_DURATION = BlockDuration.FIVE_MIN;
 
     private static final String ALGO = "RAFAEL";
@@ -69,11 +71,11 @@ public class HorizonInferenceService {
         if (!live) return;
         if (candle.getInterval() != CandleIntervals.I1_MN) return;
 
-        var descriptorOpt = modelRegistryService.getByKey(DEFAULT_MODEL_KEY);
-        if (descriptorOpt.isEmpty()) return;
+        var modelOpt = modelRegistryService.findFirst(PRED_TYPE);
+        if (modelOpt.isEmpty()) return;
 
-        ModelDescriptor descriptor = descriptorOpt.get();
-        if (!candle.getSymbol().equalsIgnoreCase(descriptor.symbol())) return;
+        SavedModel model = modelOpt.get();
+        if (!candle.getSymbol().equalsIgnoreCase(model.symbol())) return;
 
         Instant openTime = candle.getOpenTime();
 
@@ -96,26 +98,33 @@ public class HorizonInferenceService {
         if (blockInferenceMemory.getHorizonPrediction(blockUnix) != null) return;
 
         try {
-            runInference(candle, descriptor, blockUnix);
+            runInference(candle, model, blockUnix);
         } catch (Exception e) {
             log.error("[H4] Inference failed for {} @ {}: {}",
                     candle.getSymbol(), openTime, e.getMessage(), e);
         }
     }
 
-    private void runInference(SymbolCandle candle, ModelDescriptor descriptor, long blockUnix) {
+    private void runInference(SymbolCandle candle, SavedModel model, long blockUnix) {
         long t0 = System.currentTimeMillis();
         Instant openTime = candle.getOpenTime();
 
+        List<String> featureNames = modelRegistryService.getFeatureNames(model.fileName())
+                .orElse(null);
+        if (featureNames == null || featureNames.isEmpty()) {
+            log.error("[H4] No featureNames in registry for model: {}", model.fileName());
+            return;
+        }
+
         float[] features = featureExtractorService.extractFeatures(
-                candle.getSymbol(), openTime, CandleIntervals.I1_MN);
+                candle.getSymbol(), openTime, CandleIntervals.I1_MN, featureNames);
 
         if (features == null || features.length == 0) {
             log.warn("[H4] No features for {} @ {}", candle.getSymbol(), openTime);
             return;
         }
 
-        Booster booster = modelRegistryService.getBooster(descriptor.key());
+        Booster booster = modelRegistryService.getBooster(model.fileName());
         float[] probs = predict(booster, features);
 
         if (probs == null || probs.length < 2) {
@@ -147,7 +156,7 @@ public class HorizonInferenceService {
         double openMid = candle.getClose();
 
         InferencePrediction prediction = new InferencePrediction(
-                direction, confidence, 1, openTime, descriptor.key(), openMid);
+                direction, confidence, 1, openTime, model.fileName(), openMid);
         prediction.setModelThreshold(modelThreshold);
 
         blockInferenceMemory.addHorizonPrediction(blockUnix, prediction);

@@ -1,6 +1,6 @@
 package br.com.yacamin.rafael.application.service.trading;
 
-import br.com.yacamin.rafael.adapter.out.persistence.BinanceStreamConfigRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.gabriel.BinanceStreamConfigRepository;
 import br.com.yacamin.rafael.adapter.out.websocket.binance.SpotMarketDataWsAdapter;
 import br.com.yacamin.rafael.domain.BinanceStreamConfig;
 import jakarta.annotation.PreDestroy;

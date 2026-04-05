@@ -1,6 +1,6 @@
 package br.com.yacamin.rafael.application.service.algoritms.simulation;
 
-import br.com.yacamin.rafael.adapter.out.persistence.SimEventRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.gabriel.SimEventRepository;
 import br.com.yacamin.rafael.domain.SimEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

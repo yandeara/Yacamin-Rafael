@@ -1,6 +1,11 @@
 package br.com.yacamin.rafael.application.service.analyse;
 
-import br.com.yacamin.rafael.application.service.warmup.*;
+import br.com.yacamin.rafael.application.service.indicator.microstructure.MicrostructureIndicatorService;
+import br.com.yacamin.rafael.application.service.indicator.time.TimeIndicatorService;
+import br.com.yacamin.rafael.application.service.indicator.trend.TrendIndicatorService;
+import br.com.yacamin.rafael.application.service.indicator.momentum.MomentumIndicatorService;
+import br.com.yacamin.rafael.application.service.indicator.volatility.VolatilityIndicatorService;
+import br.com.yacamin.rafael.application.service.indicator.volume.VolumeIndicatorService;
 import br.com.yacamin.rafael.domain.SymbolCandle;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 
@@ -19,12 +24,12 @@ import org.ta4j.core.BarSeries;
 @RequiredArgsConstructor
 public class AnalyseOrchestratorService {
 
-    private final MicrostructureWarmupService microstructureWarmupService;
-    private final TimeWarmupService timeWarmupService;
-    private final TrendWarmupService trendWarmupService;
-    private final MomentumWarmupService momentumWarmupService;
-    private final VolatilityWarmupService volatilityWarmupService;
-    private final VolumeWarmupService volumeWarmupService;
+    private final MicrostructureIndicatorService microstructureIndicatorService;
+    private final TimeIndicatorService timeIndicatorService;
+    private final TrendIndicatorService trendIndicatorService;
+    private final MomentumIndicatorService momentumIndicatorService;
+    private final VolatilityIndicatorService volatilityIndicatorService;
+    private final VolumeIndicatorService volumeIndicatorService;
 
     private final ExecutorService pool = Executors.newFixedThreadPool(6);
 
@@ -33,12 +38,12 @@ public class AnalyseOrchestratorService {
         log.debug("[ANALYSE] START {} [{}] @ {} (bars={})", candle.getSymbol(), interval, candle.getOpenTime(), series.getBarCount());
 
         List<Callable<Void>> tasks = List.of(
-                wrap("MICRO", () -> microstructureWarmupService.analyse(candle, series)),
-                wrap("MOM",   () -> momentumWarmupService.analyse(candle, series)),
-                wrap("TIME",  () -> timeWarmupService.analyse(candle, series)),
-                wrap("TREND", () -> trendWarmupService.analyse(candle, series)),
-                wrap("VOL",   () -> volatilityWarmupService.analyse(candle, series)),
-                wrap("VOLUME",() -> volumeWarmupService.analyse(candle, series))
+                wrap("MICRO", () -> microstructureIndicatorService.analyse(candle, series)),
+                wrap("MOM",   () -> momentumIndicatorService.analyse(candle, series)),
+                wrap("TIME",  () -> timeIndicatorService.analyse(candle, series)),
+                wrap("TREND", () -> trendIndicatorService.analyse(candle, series)),
+                wrap("VOL",   () -> volatilityIndicatorService.analyse(candle, series)),
+                wrap("VOLUME",() -> volumeIndicatorService.analyse(candle, series))
                 // TPSL removido — nenhuma feature tpsl_ na máscara getTpSlMask()
         );
 

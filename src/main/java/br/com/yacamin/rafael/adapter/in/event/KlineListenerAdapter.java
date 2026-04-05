@@ -1,8 +1,7 @@
 package br.com.yacamin.rafael.adapter.in.event;
 
 import br.com.yacamin.rafael.adapter.in.event.dto.KlineUpdateSocketEvent;
-import br.com.yacamin.rafael.adapter.out.persistence.Candle1MnRepository;
-import br.com.yacamin.rafael.adapter.out.persistence.Candle5MnRepository;
+import br.com.yacamin.rafael.adapter.out.persistence.mikhael.CandleMongoRepository;
 import br.com.yacamin.rafael.application.service.candle.BarSeriesCacheService;
 import br.com.yacamin.rafael.domain.CandleIntervals;
 import br.com.yacamin.rafael.domain.SymbolCandle;
@@ -18,8 +17,7 @@ import org.springframework.stereotype.Component;
 public class KlineListenerAdapter {
 
     private final BarSeriesCacheService barSeriesCacheService;
-    private final Candle1MnRepository candle1MnRepository;
-    private final Candle5MnRepository candle5MnRepository;
+    private final CandleMongoRepository candleMongoRepository;
 
     @Async("klineUpdateListenerExecutor")
     @EventListener
@@ -40,14 +38,10 @@ public class KlineListenerAdapter {
                     candle.getOpen(), candle.getHigh(), candle.getLow(), candle.getClose(), candle.getVolume());
 
             if (interval == CandleIntervals.I1_MN) {
-                candle1MnRepository.save(candle.toCandle1Mn());
-                log.debug("[KLINE] Persisted 1m to Scylla: {} @ {}", candle.getSymbol(), candle.getOpenTime());
-            } else if (interval == CandleIntervals.I5_MN) {
-                candle5MnRepository.save(candle.toCandle5Mn());
-                log.debug("[KLINE] Persisted 5m to Scylla: {} @ {}", candle.getSymbol(), candle.getOpenTime());
+                candleMongoRepository.saveAll(java.util.List.of(candle.toCandleDocument()), interval);
+                log.debug("[KLINE] Persisted 1m to MongoDB: {} @ {}", candle.getSymbol(), candle.getOpenTime());
+                barSeriesCacheService.update(candle.getSymbol(), interval, candle, false);
             }
-
-            barSeriesCacheService.update(candle.getSymbol(), interval, candle, false);
 
             log.info("[KLINE] Processed in {}ms: {} [{}] @ {}",
                     System.currentTimeMillis() - t0, candle.getSymbol(), interval, candle.getOpenTime());
